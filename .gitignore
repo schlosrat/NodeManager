@@ -16,6 +16,9 @@
 # Mono auto generated files
 mono_crash.*
 
+# KSP dlls
+external_dlls/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
