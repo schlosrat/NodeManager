@@ -14,6 +14,7 @@ using SpaceWarp.API.Mods;
 using SpaceWarp.API.UI;
 using SpaceWarp.API.UI.Appbar;
 using UnityEngine;
+using System.Collections;
 
 /* This mod is primarily meant as a service provider to other mods, which can call functions in this one
  * without needing to recreate all these functios in the base mod. To use this mod in your mod you will
@@ -116,7 +117,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
 
         GameManager.Instance.Game.Messages.Subscribe<ManeuverCreatedMessage>(msg =>
         {
-            var message = (ManeuverRemovedMessage)msg;
+            var message = (ManeuverCreatedMessage)msg;
             OnManeuverCreatedMessage(message);
         });
 
@@ -409,7 +410,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         ManeuverPlanSolver maneuverPlanSolver = activeVessel.Orbiter?.ManeuverPlanSolver;
         IPatchedOrbit orbit = activeVessel.Orbit;
         // maneuverPlanSolver.FindPatchContainingUt(UT, maneuverPlanSolver.ManeuverTrajectory, out orbit, out int _);
-        // var selectedNode = -1;
         for (int i = 0; i < Nodes.Count - 1; i++)
         {
             if (burnUT > Nodes[i].Time && burnUT < Nodes[i + 1].Time)
@@ -419,19 +419,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
                 Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to Node[{i + 1}]'s ManeuverTrajectoryPatch");
             }
         }
-        //if (selectedNode < 0)
-        //{
-        //    Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to activeVessle's next patch");
-        //    orbit = activeVessel.Orbit.NextPatch;
-        //}
-
-        //if (selectedNode < Nodes.Count - 1) // This is a test block! We shouldn't need this. If this triggers, then fix the block above
-        //{
-        //    Logger.LogDebug($"CreateManeuverNodeAtUT: Failed to select last patch");
-        //    selectedNode = Nodes.Count - 1;
-        //    orbit = Nodes[selectedNode].ManeuverTrajectoryPatch;
-        //    Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to Node[{selectedNode}]'s patch");
-        //}
 
         // IPatchedOrbit orbit = referencedOrbit;
         // orbit.PatchStartTransition = PatchTransitionType.Maneuver;
@@ -503,6 +490,61 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         UpdateNode(nodeData, nodeTimeAdj);
 
         // Logger.LogDebug("AddManeuverNode Done");
+    }
+
+    private IEnumerator RefreshNodes(ManeuverPlanComponent maneuverPlanComponent)
+    {
+        // yield return (object)new WaitForFixedUpdate();
+
+        for (int i = 0; i < Nodes.Count; i++) // was i = SelectedNodeIndex
+        {
+            // Logger.LogDebug($"RefreshNodes: Updateing Node {i}");
+            var node = Nodes[i];
+            // maneuverPlanComponent.UpdateTimeOnNode(node, node.Time);
+            maneuverPlanComponent.UpdateNodeDetails(node);
+            //yield return (object)new WaitForFixedUpdate();
+            //maneuverPlanComponent.RefreshManeuverNodeState(i);
+        }
+
+        for (int i = 0; i < Nodes.Count; i++) // was i = SelectedNodeIndex
+        {
+            // Logger.LogDebug($"RefreshNodes: Refreshing Node {i}");
+            try { maneuverPlanComponent.RefreshManeuverNodeState(i); }
+            catch (NullReferenceException e)
+            {
+                Logger.LogError($"RefreshNodes: Suppressed NRE for Node {i}: {e}");
+                Logger.LogError($"RefreshNodes: Node {i}: {Nodes[i]}");
+            }
+        }
+
+        yield return (object)new WaitForFixedUpdate();
+        // NodeControl.RefreshManeuverNodes();
+        // yield return (object)new WaitForFixedUpdate();
+
+        for (int i = 0; i < Nodes.Count; i++) // was i = SelectedNodeIndex
+        {
+            // Logger.LogDebug($"RefreshNodes: Updateing Node {i}");
+            var node = Nodes[i];
+            // maneuverPlanComponent.UpdateTimeOnNode(node, node.Time);
+            maneuverPlanComponent.UpdateNodeDetails(node);
+            //yield return (object)new WaitForFixedUpdate();
+            //maneuverPlanComponent.RefreshManeuverNodeState(i);
+        }
+
+        for (int i = 0; i < Nodes.Count; i++) // was i = SelectedNodeIndex
+        {
+            // Logger.LogDebug($"RefreshNodes: Refreshing Node {i}");
+            try { maneuverPlanComponent.RefreshManeuverNodeState(i); }
+            catch (NullReferenceException e)
+            {
+                Logger.LogError($"RefreshNodes: Suppressed NRE for Node {i}: {e}");
+                Logger.LogError($"RefreshNodes: Node {i}: {Nodes[i]}");
+            }
+        }
+
+        // yield return (object)new WaitForFixedUpdate();
+
+        // NodeControl.RefreshManeuverNodes();
     }
 
     public void UpdateNode(ManeuverNodeData nodeData, double nodeTimeAdj = 0)
