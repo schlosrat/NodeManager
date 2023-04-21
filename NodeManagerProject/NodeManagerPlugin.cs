@@ -488,8 +488,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         Logger.LogDebug("AddManeuverNode");
 
         // Add the node to the vessel's orbit. There are at least two ways to do this...
-        activeVessel.SimulationObject.ManeuverPlan.AddNode(nodeData, true);
-        // GameManager.Instance.Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
+        // activeVessel.SimulationObject.ManeuverPlan.AddNode(nodeData, true);
+        GameManager.Instance.Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
 
         activeVessel.Orbiter.ManeuverPlanSolver.UpdateManeuverTrajectory();
 
