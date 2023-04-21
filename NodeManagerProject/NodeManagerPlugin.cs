@@ -496,7 +496,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         // For KSP2, We want the to start burns early to make them centered on the node
         var nodeTimeAdj = nodeData.BurnDuration * burnDurationOffsetFactor;
 
-        // Logger.LogDebug($"AddManeuverNode: BurnDuration {nodeData.BurnDuration} s");
+        // Update the currentNode so that UpdateNode will work
+        RefreshActiveVesselAndCurrentManeuver();
 
         // Update the node to put a gizmo on it
         UpdateNode(nodeData, nodeTimeAdj);
@@ -506,6 +507,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
 
     public void UpdateNode(ManeuverNodeData nodeData, double nodeTimeAdj = 0)
     {
+        Logger.LogDebug("UpdateNode");
         MapCore mapCore = null;
         GameManager.Instance.Game.Map.TryGetMapCore(out mapCore);
         var m3d = mapCore.map3D;
