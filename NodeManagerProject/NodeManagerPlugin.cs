@@ -549,11 +549,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
 
         yield return new WaitForFixedUpdate();
 
-        // activeVessel.Orbiter.ManeuverPlanSolver.UpdateManeuverTrajectory();
-
         MapCore mapCore = null;
         GameManager.Instance.Game.Map.TryGetMapCore(out mapCore);
-        var maneuverManager = mapCore.map3D.ManeuverManager;
 
         // Manage the maneuver on the map
         if (mapCore)
