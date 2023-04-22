@@ -91,7 +91,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     public VesselComponent activeVessel;
     public ManeuverNodeData currentNode;
     public List<ManeuverNodeData> Nodes = new();
-    private int maxNodes = 6;
+    // private int maxNodes = 8;
 
     // private static ManualLogSource Logger = BepInEx.Logging.Logger.CreateLogSource("ManeuverNodeController.Utility");
     //public ManualLogSource logger;
@@ -421,11 +421,11 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             Logger.LogWarning($"CreateManeuverNodeAtUT: activeVessel is null. Unable to proceed.");
             return false;
         }
-        if (Nodes.Count >= maxNodes)
-        {
-            Logger.LogWarning($"CreateManeuverNodeAtUT: Max Nodes Limit ({maxNodes}) reached. Unable to proceed.");
-            return false;
-        }
+        //if (Nodes.Count >= maxNodes)
+        //{
+        //    Logger.LogWarning($"CreateManeuverNodeAtUT: Max Nodes Limit ({maxNodes}) reached. Unable to proceed.");
+        //    return false;
+        //}
         var UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
         Logger.LogDebug($"CreateManeuverNodeAtUT: burnVector  = [{burnVector.x}, {burnVector.y}, {burnVector.z}] = {burnVector.magnitude} m/s");
         Logger.LogDebug($"CreateManeuverNodeAtUT: burnUT      = {burnUT - UT} s from now");
@@ -558,8 +558,9 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         // Manage the maneuver on the map
         if (mapCore)
         {
-            mapCore.map3D.ManeuverManager.GetNodeDataForVessels();
-            mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(nodeData.NodeID);
+            mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData);
+            // mapCore.map3D.ManeuverManager.GetNodeDataForVessels();
+            // mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(nodeData.NodeID);
         }
         //maneuverManager.RemoveAll();
         //try { maneuverManager?.GetNodeDataForVessels(); }
