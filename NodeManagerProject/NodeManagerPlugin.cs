@@ -91,7 +91,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     public VesselComponent activeVessel;
     public ManeuverNodeData currentNode;
     public List<ManeuverNodeData> Nodes = new();
-    // private int maxNodes = 8;
+    private int maxNodes = 9; // This seems to be a hard limit on KSP2's capacity for nodes. Even making them manually
+                              // in the game you will get NREs if you try to make a 10th one.
 
     // private static ManualLogSource Logger = BepInEx.Logging.Logger.CreateLogSource("ManeuverNodeController.Utility");
     //public ManualLogSource logger;
@@ -319,7 +320,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
                 Logger.LogInfo($"RelatedSimID:             {node.RelatedSimID}");
                 Logger.LogInfo($"SimTransform:             {node.SimTransform}");
             }
-
         }
     }
 
@@ -348,8 +348,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         RefreshManeuverNodes();
         List<ManeuverNodeData> nodesToDelete = new List<ManeuverNodeData>();
 
-        //var nodeToDelete = activeVesselPlan.GetNodes()[SelectedNodeIndex];
-        //nodeData.Add(nodeToDelete);
         // This should never happen, but better be safe
         if (SelectedNodeIndex + 1 > Nodes.Count)
             SelectedNodeIndex = Math.Max(0, Nodes.Count - 1);
@@ -368,9 +366,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     private IPatchedOrbit GetLastOrbit(bool silent = true)
     {
         RefreshManeuverNodes();
-        // Logger.LogDebug("GetLastOrbit");
-        //List<ManeuverNodeData> patchList =
-        //    GameManager.Instance.Game.SpaceSimulation.Maneuvers.GetNodesForVessel(Utility.activeVessel.SimulationObject.GlobalId);
 
         if (!silent)
             Logger.LogDebug($"GetLastOrbit: Nodes.Count = {Nodes.Count}");
@@ -421,11 +416,11 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             Logger.LogWarning($"CreateManeuverNodeAtUT: activeVessel is null. Unable to proceed.");
             return false;
         }
-        //if (Nodes.Count >= maxNodes)
-        //{
-        //    Logger.LogWarning($"CreateManeuverNodeAtUT: Max Nodes Limit ({maxNodes}) reached. Unable to proceed.");
-        //    return false;
-        //}
+        if (Nodes.Count >= maxNodes)
+        {
+            Logger.LogWarning($"CreateManeuverNodeAtUT: Max Nodes Limit ({maxNodes}) reached. Unable to proceed.");
+            return false;
+        }
         var UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
         Logger.LogDebug($"CreateManeuverNodeAtUT: burnVector  = [{burnVector.x}, {burnVector.y}, {burnVector.z}] = {burnVector.magnitude} m/s");
         Logger.LogDebug($"CreateManeuverNodeAtUT: burnUT      = {burnUT - UT} s from now");
@@ -446,14 +441,11 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
                 if (burnUT > Nodes[i].Time && burnUT < Nodes[i + 1].Time)
                 {
                     orbit = Nodes[i + 1].ManeuverTrajectoryPatch;
-                    // selectedNode = i;
                     Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to Node[{i + 1}]'s ManeuverTrajectoryPatch");
                 }
             }
             if (orbit == null)
             {
-                //Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to Node[{Nodes.Count-1}]'s ManeuverTrajectoryPatch");
-                //orbit = Nodes[Nodes.Count - 1].ManeuverTrajectoryPatch;
                 Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to activeVessel.Orbit");
                 orbit = activeVessel.Orbit;
             }
@@ -536,10 +528,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         // Refresh the node list
         RefreshManeuverNodes();
 
-        //ManeuverPlanComponent maneuverPlanComponent = null;
-
-        // StartCoroutine(RefreshNodes());
-
         // Logger.LogDebug("AddManeuverNode Done");
     }
 
@@ -559,13 +547,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             // mapCore.map3D.ManeuverManager.GetNodeDataForVessels();
             // mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(nodeData.NodeID);
         }
-        //maneuverManager.RemoveAll();
-        //try { maneuverManager?.GetNodeDataForVessels(); }
-        //catch (Exception e) { Logger.LogError($"UpdateNode: caught exception on call to mapCore.map3D.ManeuverManager.GetNodeDataForVessels(): {e}"); }
-        //try { maneuverManager.UpdateAll(); }
-        //catch (Exception e) { Logger.LogError($"UpdateNode: caught exception on call to mapCore.map3D.ManeuverManager.UpdateAll(): {e}"); }
-        //try { maneuverManager.UpdatePositionForGizmo(currentNode.NodeID); }
-        //catch (Exception e) { Logger.LogError($"UpdateNode: caught exception on call to mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(): {e}"); }
     }
 
     public bool AddNode(PatchedConicsOrbit orbit)
@@ -618,10 +599,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         {
             // Logger.LogDebug($"RefreshNodes: Updateing Node {i}");
             var node = Nodes[i];
-            // maneuverPlanComponent.UpdateTimeOnNode(node, node.Time);
             maneuverPlanComponent.UpdateNodeDetails(node);
-            //yield return (object)new WaitForFixedUpdate();
-            //maneuverPlanComponent.RefreshManeuverNodeState(i);
         }
 
         for (int i = 0; i < Nodes.Count; i++) // was i = SelectedNodeIndex
@@ -636,17 +614,12 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         }
 
         yield return (object)new WaitForFixedUpdate();
-        // NodeControl.RefreshManeuverNodes();
-        // yield return (object)new WaitForFixedUpdate();
 
         for (int i = 0; i < Nodes.Count; i++) // was i = SelectedNodeIndex
         {
             // Logger.LogDebug($"RefreshNodes: Updateing Node {i}");
             var node = Nodes[i];
-            // maneuverPlanComponent.UpdateTimeOnNode(node, node.Time);
             maneuverPlanComponent.UpdateNodeDetails(node);
-            //yield return (object)new WaitForFixedUpdate();
-            //maneuverPlanComponent.RefreshManeuverNodeState(i);
         }
 
         for (int i = 0; i < Nodes.Count; i++) // was i = SelectedNodeIndex
@@ -659,9 +632,5 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
                 SpitNode(i, true);
             }
         }
-
-        // yield return (object)new WaitForFixedUpdate();
-
-        // NodeControl.RefreshManeuverNodes();
     }
 }
