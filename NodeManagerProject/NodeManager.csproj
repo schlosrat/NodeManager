@@ -14,7 +14,20 @@
         </RestoreAdditionalProjectSources>
         <RootNamespace>NodeManager</RootNamespace>
         <ModId Condition="'$(ModId)'==''">node_manager</ModId>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Authors>schlosrat;cfloutier</Authors>
+		<PackageId>NodeManager</PackageId>
+		<PackageLicenseUrl>https://raw.githubusercontent.com/schlosrat/NodeManager/master/license.md</PackageLicenseUrl>
+		<PackageOutputPath>..\nuget</PackageOutputPath>
+		<PackageProjectUrl>https://github.com/schlosrat/NodeManager</PackageProjectUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageTags>SpaceWarp;KSP2;modding;library;maneuvers</PackageTags>
+		<RepositoryUrl>https://github.com/schlosrat/NodeManager</RepositoryUrl>
+		<Title>Node Manager</Title>
     </PropertyGroup>
+	<ItemGroup>
+		<None Include="..\README.md" Pack="true" PackagePath="" />
+	</ItemGroup>
     <ItemGroup>
         <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
         <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.0" PrivateAssets="all" />
