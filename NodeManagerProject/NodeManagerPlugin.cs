@@ -9,10 +9,8 @@ using KSP.Sim.impl;
 using KSP.Sim.Maneuver;
 using KSP.UI.Binding;
 using SpaceWarp;
-using SpaceWarp.API.Assets;
 using SpaceWarp.API.Mods;
 using SpaceWarp.API.UI;
-using SpaceWarp.API.UI.Appbar;
 using UnityEngine;
 using System.Collections;
 
@@ -324,22 +322,39 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     }
 
     // Spit out Node info to the log based on the node passed in
-    public void SpitNode(ManeuverNodeData node)
+    public void SpitNode(ManeuverNodeData node, bool isError = false)
     {
         if ( node != null )
         {
-            // ManeuverNodeData node = Nodes[SelectedNodeIndex];
-            Logger.LogInfo($"SpitNode: Node:");
-            Logger.LogInfo($"BurnDuration:             {node.BurnDuration} s");
-            Logger.LogInfo($"BurnRequiredDV:           {node.BurnRequiredDV} m/s");
-            Logger.LogInfo($"BurnVector:               [{node.BurnVector.x}, {node.BurnVector.y}, {node.BurnVector.z}] = {node.BurnVector.magnitude} m/s");
-            Logger.LogInfo($"CachedManeuverPatchEndUT: {node.CachedManeuverPatchEndUT} s");
-            Logger.LogInfo($"IsOnManeuverTrajectory:   {node.IsOnManeuverTrajectory}");
-            Logger.LogInfo($"ManeuverTrajectoryPatch:  {node.ManeuverTrajectoryPatch}");
-            Logger.LogInfo($"NodeID:                   {node.NodeID}");
-            Logger.LogInfo($"NodeName:                 {node.NodeName}");
-            Logger.LogInfo($"RelatedSimID:             {node.RelatedSimID}");
-            Logger.LogInfo($"SimTransform:             {node.SimTransform}");
+            if (isError)
+            {
+                Logger.LogError($"SpitNode: Node:");
+                Logger.LogError($"BurnDuration:             {node.BurnDuration} s");
+                Logger.LogError($"BurnRequiredDV:           {node.BurnRequiredDV} m/s");
+                Logger.LogError($"BurnVector:               [{node.BurnVector.x}, {node.BurnVector.y}, {node.BurnVector.z}] = {node.BurnVector.magnitude} m/s");
+                Logger.LogError($"CachedManeuverPatchEndUT: {node.CachedManeuverPatchEndUT} s");
+                Logger.LogError($"IsOnManeuverTrajectory:   {node.IsOnManeuverTrajectory}");
+                Logger.LogError($"ManeuverTrajectoryPatch:  {node.ManeuverTrajectoryPatch}");
+                Logger.LogError($"NodeID:                   {node.NodeID}");
+                Logger.LogError($"NodeName:                 {node.NodeName}");
+                Logger.LogError($"RelatedSimID:             {node.RelatedSimID}");
+                Logger.LogError($"SimTransform:             {node.SimTransform}");
+            }
+            else
+            {
+                Logger.LogInfo($"SpitNode: Node:");
+                Logger.LogInfo($"BurnDuration:             {node.BurnDuration} s");
+                Logger.LogInfo($"BurnRequiredDV:           {node.BurnRequiredDV} m/s");
+                Logger.LogInfo($"BurnVector:               [{node.BurnVector.x}, {node.BurnVector.y}, {node.BurnVector.z}] = {node.BurnVector.magnitude} m/s");
+                Logger.LogInfo($"CachedManeuverPatchEndUT: {node.CachedManeuverPatchEndUT} s");
+                Logger.LogInfo($"IsOnManeuverTrajectory:   {node.IsOnManeuverTrajectory}");
+                Logger.LogInfo($"ManeuverTrajectoryPatch:  {node.ManeuverTrajectoryPatch}");
+                Logger.LogInfo($"NodeID:                   {node.NodeID}");
+                Logger.LogInfo($"NodeName:                 {node.NodeName}");
+                Logger.LogInfo($"RelatedSimID:             {node.RelatedSimID}");
+                Logger.LogInfo($"SimTransform:             {node.SimTransform}");
+            }
+
         }
     }
 
@@ -549,24 +564,25 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         }
     }
 
-    public bool AddNode(PatchedConicsOrbit orbit)
+    public bool AddNode(double burnUT = 0)
     {
-        // Add an empty maneuver node
-        // Logger.LogDebug("handleButtons: Adding New Node");
+        RefreshActiveVesselAndCurrentManeuver();
 
         // Define empty node data
         double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
-        double burnUT;
-        if (orbit.eccentricity < 1 && Nodes.Count == 0)
+        if (burnUT < UT)
         {
-            burnUT = UT + orbit.TimeToAp;
-        }
-        else
-        {
-            if (Nodes.Count > 0)
-                burnUT = Nodes[Nodes.Count - 1].Time + Math.Min(orbit.period / 10, 600);
+            if (activeVessel.Orbit.eccentricity < 1 && Nodes.Count == 0)
+            {
+                burnUT = UT + activeVessel.Orbit.TimeToAp;
+            }
             else
-                burnUT = UT + 30;
+            {
+                if (Nodes.Count > 0)
+                    burnUT = Nodes[Nodes.Count - 1].Time + Math.Min(activeVessel.Orbit.period / 10, 600);
+                else
+                    burnUT = UT + 30;
+            }
         }
 
         Vector3d burnVector;
