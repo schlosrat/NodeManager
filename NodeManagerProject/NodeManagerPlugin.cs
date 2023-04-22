@@ -570,7 +570,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         //catch (Exception e) { Logger.LogError($"UpdateNode: caught exception on call to mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(): {e}"); }
     }
 
-    public void AddNode(PatchedConicsOrbit orbit)
+    public bool AddNode(PatchedConicsOrbit orbit)
     {
         // Add an empty maneuver node
         // Logger.LogDebug("handleButtons: Adding New Node");
@@ -595,7 +595,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         burnVector.y = 0;
         burnVector.z = 0;
 
-        CreateManeuverNodeAtUT(burnVector, burnUT, 0);
+        return CreateManeuverNodeAtUT(burnVector, burnUT, 0);
     }
 
     public IEnumerator RefreshNodes()
