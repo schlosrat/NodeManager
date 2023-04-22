@@ -43,11 +43,18 @@ In your csproj file you probably already have an ItemGroup where BepInEx, Harmon
     </ItemGroup>
 ```
 
-### Step 2:
-Bring in the NodeManger namespace in the class you want to call it from.
+### Step 2: Configure Namespace and Add Dependency
+Bring in the NodeManger namespace in the class you want to call it from, and add Node Manager as a BepInDependency.
 
 ```cs
-   using NodeManager;
+    using NodeManager;
+    
+    namespace MyCoolModsNameSpace;
+    
+    [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
+    [BepInDependency(SpaceWarpPlugin.ModGuid, SpaceWarpPlugin.ModVer)]
+    [BepInDependency(NodeManagerPlugin.ModGuid, NodeManagerPlugin.ModVer)]
+    public class MyCoolModName : BaseSpaceWarpPlugin
 ```
 
 ### Step 3: Call Node Manager Methods from your Mod
@@ -89,11 +96,11 @@ In your csproj file locate the ItemGroup where you have local References defined
     </ItemGroup>
 ```
 
-### Step 2: Configure Namespace
-Bring in the NodeManger namespace in the class you want to call it from. See Step 2 above as there is no difference.
+### Step 2: Configure Namespace and Add Dependency
+See Step 2 above as there is no difference.
 
 ### Step 3: Call Node Manager Methods from your Mod
-As above, this is the same for using a Nuget package reference, so see Step 3 above.
+See Step 3 above as there is no difference.
 
 ### Step 4: Profit!
 
