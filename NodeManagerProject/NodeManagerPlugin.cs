@@ -407,25 +407,41 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         }
 
         var UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
-        Logger.LogDebug($"CreateManeuverNodeAtUT: burnVector = [{burnVector.x}, {burnVector.y}, {burnVector.z}] = {burnVector.magnitude} m/s");
-        Logger.LogDebug($"CreateManeuverNodeAtUT: burnUT     = {burnUT - UT} s from now");
-        Logger.LogDebug($"CreateManeuverNodeAtUT: offsetFac  = {burnDurationOffsetFactor}");
+        Logger.LogDebug($"CreateManeuverNodeAtUT: burnVector  = [{burnVector.x}, {burnVector.y}, {burnVector.z}] = {burnVector.magnitude} m/s");
+        Logger.LogDebug($"CreateManeuverNodeAtUT: burnUT      = {burnUT - UT} s from now");
+        Logger.LogDebug($"CreateManeuverNodeAtUT: offsetFac   = {burnDurationOffsetFactor}");
+        Logger.LogDebug($"CreateManeuverNodeAtUT: Nodes.Count = {Nodes.Count}");
 
         if (burnUT < UT + 1) // Don't set node to now or in the past
             burnUT = UT + 1;
 
         // Get the patch to put this node on
         ManeuverPlanSolver maneuverPlanSolver = activeVessel.Orbiter?.ManeuverPlanSolver;
-        IPatchedOrbit orbit = activeVessel.Orbit;
+        IPatchedOrbit orbit = null;
         // maneuverPlanSolver.FindPatchContainingUt(UT, maneuverPlanSolver.ManeuverTrajectory, out orbit, out int _);
-        for (int i = 0; i < Nodes.Count - 1; i++)
+        if ( Nodes.Count > 0 )
         {
-            if (burnUT > Nodes[i].Time && burnUT < Nodes[i + 1].Time)
+            for (int i = 0; i < Nodes.Count - 1; i++)
             {
-                orbit = Nodes[i + 1].ManeuverTrajectoryPatch;
-                // selectedNode = i;
-                Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to Node[{i + 1}]'s ManeuverTrajectoryPatch");
+                if (burnUT > Nodes[i].Time && burnUT < Nodes[i + 1].Time)
+                {
+                    orbit = Nodes[i + 1].ManeuverTrajectoryPatch;
+                    // selectedNode = i;
+                    Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to Node[{i + 1}]'s ManeuverTrajectoryPatch");
+                }
             }
+            if (orbit == null)
+            {
+                //Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to Node[{Nodes.Count-1}]'s ManeuverTrajectoryPatch");
+                //orbit = Nodes[Nodes.Count - 1].ManeuverTrajectoryPatch;
+                Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to activeVessel.Orbit");
+                orbit = activeVessel.Orbit;
+            }
+        }
+        else
+        {
+            Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to activeVessel.Orbit");
+            orbit = activeVessel.Orbit;
         }
 
         // IPatchedOrbit orbit = referencedOrbit;
@@ -449,12 +465,12 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         }
         else
         {
-            if (UT < Nodes[0].Time) // request time is before the first node
+            if (burnUT < Nodes[0].Time) // request time is before the first node
             {
                 nodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, false, burnUT);
                 orbit.PatchEndTransition = PatchTransitionType.Maneuver;
             }
-            else if (UT > Nodes[Nodes.Count - 1].Time) // requested time is after the last node
+            else if (burnUT > Nodes[Nodes.Count - 1].Time) // requested time is after the last node
             {
                 nodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, true, burnUT);
                 orbit.PatchEndTransition = PatchTransitionType.Final;
@@ -483,11 +499,11 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         Logger.LogDebug("AddManeuverNode");
 
         // Add the node to the vessel's orbit. There are at least two ways to do this...
-        //    ManeuverPlanComponent maneuverPlan;
-        //    maneuverPlan = activeVessel.SimulationObject.ManeuverPlan;
-        //    maneuverPlan.AddNode(nodeData, true);
-        //    maneuverPlan.UpdateManeuverTrajectory();
-        GameManager.Instance.Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
+        ManeuverPlanComponent maneuverPlan;
+        maneuverPlan = activeVessel.SimulationObject.ManeuverPlan;
+        maneuverPlan.AddNode(nodeData, true);
+        activeVessel.Orbiter.ManeuverPlanSolver.UpdateManeuverTrajectory();
+        // GameManager.Instance.Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
 
         // For KSP2, We want the to start burns early to make them centered on the node
         var nodeTimeAdj = nodeData.BurnDuration * burnDurationOffsetFactor;
@@ -560,6 +576,9 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
 
     public IEnumerator RefreshNodes()
     {
+        // Refresh the node list
+        RefreshManeuverNodes();
+
         if (activeVessel == null)
         {
             Logger.LogWarning("RefreshNodes: activeVessel is null. Unable to proceed.");
