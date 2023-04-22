@@ -4,7 +4,7 @@
   "name": "Node Manager",
   "description": "Provides services for other mods needing to create, delete, and manage maneuver nodes",
   "source": "https://github.com/schlosrat/NodeManager",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "version_check": "",
   "dependencies": [
     {
