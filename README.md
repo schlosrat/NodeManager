@@ -10,7 +10,7 @@ This mod is primarily meant as a service provider to other mods, which can call 
 * **CreateManeuverNodeAtUT(burnVector, burnUT, burnDurationOffsetFactor)**: This method will create a new node using the supplied (Vector3d) burnVector at the specified (double) time for burn, applying the optional (double) burnDurationOffsetFactor. If the burnDurationOffsetFactor is not specified, a default value of -0.5 will be used resulting in the burn time starting before the specified time by 1/2 of the node's burn duration (as estimated by the game for the active vessel).
 * **DeleteNodes(SelectedNodeIndex)**: This method takes an integer node index and will delete the node at that index along will all following nodes. If you pass it 0, then all nodes will be deleted.
 * **RefreshActiveVesselAndCurrentManeuver()**: Calling this method will force Node Manager to refresh its local copy of the active vessel and current node. This is done automatically by Node Manager as needed, but if you want to force it to update you can.
-* RefreshManeuverNodes(): Calling this method will trigger a call to RefreshActiveVesselAndCurrentManeuver and then rebuild Node Manager's internal list of nodes for the active vessel. This is done automatically by Node Manager as needed, but if you want to force it to update you can.
+* **RefreshManeuverNodes()**: Calling this method will trigger a call to RefreshActiveVesselAndCurrentManeuver and then rebuild Node Manager's internal list of nodes for the active vessel. This is done automatically by Node Manager as needed, but if you want to force it to update you can.
 * **RefreshNodes()**: Calling this method will call `maneuverPlanComponent.UpdateNodeDetails(node)` and `maneuverPlanComponent.RefreshManeuverNodeState(i)` for each node the active vessel has. This can be useful if your mod is adjusting a node's BurnVector or Time and you want to make sure that node and all following nodes are properly updated for these effects.
 * **SpitNode(SelectedNodeIndex, isError)**: This method takes an integer node index and, (optionally) a Boolean value, and will output info about the indexed node to the BepInex log. The defalt for isError is false. If isError is set true, the the log will go out at the Error level.
 * **SpitNode(node, isError)**: This method takes a node (type ManeuverNodeData) and, (optionally) a Boolean value, and will output info about the indexed node to the BepInex log. The defalt for isError is false. If isError is set true, the the log will go out at the Error level.
@@ -61,15 +61,15 @@ Bring in the NodeManger namespace in the class you want to call it from, and add
 You can now call any of Node Manager's public methods directly and easily from your code. Here are some examples:
 
 ```cs
-    NodeManagerPlugin.Instance.RefreshActiveVesselAndCurrentManeuver();
-    NodeManagerPlugin.Instance.RefreshManeuverNodes();
-    NodeManagerPlugin.Instance.SpitNode(SelectedNodeIndex); // int
-    NodeManagerPlugin.Instance.SpitNode(node); // ManeuverNodeData
-    NodeManagerPlugin.Instance.DeleteNodes(SelectedNodeIndex); // int
+    pass = NodeManagerPlugin.Instance.AddNode(burnUT) // double
     pass = NodeManagerPlugin.Instance.CreateManeuverNodeAtTA(burnVector, TrueAnomalyRad, burnDurationOffsetFactor); // Vector3d, double, double (default = -0.5)
     pass = NodeManagerPlugin.Instance.CreateManeuverNodeAtUT(burnVector, burnUT, burnDurationOffsetFactor); // Vector3d, double, double (default = -0.5)
-    NodeManagerPlugin.Instance.UpdateNode(nodeData, nodeTimeAdj); // ManeuverNodeData, double (default = 0)
-    pass = NodeManagerPlugin.Instance.AddNode(orbit) // PatchedConicsOrbit
+    NodeManagerPlugin.Instance.DeleteNodes(SelectedNodeIndex); // int
+    NodeManagerPlugin.Instance.RefreshActiveVesselAndCurrentManeuver();
+    NodeManagerPlugin.Instance.RefreshManeuverNodes();
+    NodeManagerPlugin.Instance.RefreshNodes();
+    NodeManagerPlugin.Instance.SpitNode(SelectedNodeIndex, isError); // int, bool
+    NodeManagerPlugin.Instance.SpitNode(node, isError); // ManeuverNodeData, bool
 ```
 
 ### Step 4: Profit!
