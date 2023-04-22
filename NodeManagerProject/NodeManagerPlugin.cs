@@ -91,6 +91,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     public VesselComponent activeVessel;
     public ManeuverNodeData currentNode;
     public List<ManeuverNodeData> Nodes = new();
+    private int maxNodes = 6;
 
     // private static ManualLogSource Logger = BepInEx.Logging.Logger.CreateLogSource("ManeuverNodeController.Utility");
     //public ManualLogSource logger;
@@ -136,24 +137,21 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         closeBtnRect = new Rect(windowWidth - 23, 6, 16, 16);
 
         // Register Flight AppBar button
-        Appbar.RegisterAppButton(
-            "Node Manager",
-            ToolbarFlightButtonID,
-            AssetManager.GetAsset<Texture2D>($"{SpaceWarpMetadata.ModID}/images/icon.png"),
-            // Toggle the GUI the MicroEngineer way
-            delegate { showGUI = !showGUI; }
-        );
+        //Appbar.RegisterAppButton(
+        //    "Node Manager",
+        //    ToolbarFlightButtonID,
+        //    AssetManager.GetAsset<Texture2D>($"{SpaceWarpMetadata.ModID}/images/icon.png"),
+        //    // Toggle the GUI the MicroEngineer way
+        //    delegate { showGUI = !showGUI; }
+        //);
 
         //// Register OAB AppBar Button
         //Appbar.RegisterOABAppButton(
         //    "Node Manager",
         //    ToolbarOABButtonID,
         //    AssetManager.GetAsset<Texture2D>($"{SpaceWarpMetadata.ModID}/images/icon.png"),
-        //    isOpen =>
-        //    {
-        //        _isWindowOpen = isOpen;
-        //        GameObject.Find(ToolbarOABButtonID)?.GetComponent<UIValue_WriteBool_Toggle>()?.SetValue(isOpen);
-        //    }
+        //    // Toggle the GUI the MicroEngineer way
+        //    delegate { showGUI = !showGUI; }
         //);
 
         // Register all Harmony patches in the project
@@ -287,23 +285,41 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     }
 
     // Spit out Node info to the log based on the requested index for a node
-    public void SpitNode(int SelectedNodeIndex)
+    public void SpitNode(int SelectedNodeIndex, bool isError = false)
     {
         RefreshManeuverNodes();
         if (SelectedNodeIndex < Nodes.Count)
         {
             ManeuverNodeData node = Nodes[SelectedNodeIndex];
-            Logger.LogInfo($"Node[{SelectedNodeIndex}]");
-            Logger.LogInfo($"BurnDuration:             {node.BurnDuration} s");
-            Logger.LogInfo($"BurnRequiredDV:           {node.BurnRequiredDV} m/s");
-            Logger.LogInfo($"BurnVector:               [{node.BurnVector.x}, {node.BurnVector.y}, {node.BurnVector.z}] = {node.BurnVector.magnitude} m/s");
-            Logger.LogInfo($"CachedManeuverPatchEndUT: {node.CachedManeuverPatchEndUT} s");
-            Logger.LogInfo($"IsOnManeuverTrajectory:   {node.IsOnManeuverTrajectory}");
-            Logger.LogInfo($"ManeuverTrajectoryPatch:  {node.ManeuverTrajectoryPatch}");
-            Logger.LogInfo($"NodeID:                   {node.NodeID}");
-            Logger.LogInfo($"NodeName:                 {node.NodeName}");
-            Logger.LogInfo($"RelatedSimID:             {node.RelatedSimID}");
-            Logger.LogInfo($"SimTransform:             {node.SimTransform}");
+            if (isError)
+            {
+                Logger.LogError($"SpitNode: Node[{SelectedNodeIndex}]");
+                Logger.LogError($"BurnDuration:             {node.BurnDuration} s");
+                Logger.LogError($"BurnRequiredDV:           {node.BurnRequiredDV} m/s");
+                Logger.LogError($"BurnVector:               [{node.BurnVector.x}, {node.BurnVector.y}, {node.BurnVector.z}] = {node.BurnVector.magnitude} m/s");
+                Logger.LogError($"CachedManeuverPatchEndUT: {node.CachedManeuverPatchEndUT} s");
+                Logger.LogError($"IsOnManeuverTrajectory:   {node.IsOnManeuverTrajectory}");
+                Logger.LogError($"ManeuverTrajectoryPatch:  {node.ManeuverTrajectoryPatch}");
+                Logger.LogError($"NodeID:                   {node.NodeID}");
+                Logger.LogError($"NodeName:                 {node.NodeName}");
+                Logger.LogError($"RelatedSimID:             {node.RelatedSimID}");
+                Logger.LogError($"SimTransform:             {node.SimTransform}");
+            }
+            else
+            {
+                Logger.LogInfo($"SpitNode: Node[{SelectedNodeIndex}]");
+                Logger.LogInfo($"BurnDuration:             {node.BurnDuration} s");
+                Logger.LogInfo($"BurnRequiredDV:           {node.BurnRequiredDV} m/s");
+                Logger.LogInfo($"BurnVector:               [{node.BurnVector.x}, {node.BurnVector.y}, {node.BurnVector.z}] = {node.BurnVector.magnitude} m/s");
+                Logger.LogInfo($"CachedManeuverPatchEndUT: {node.CachedManeuverPatchEndUT} s");
+                Logger.LogInfo($"IsOnManeuverTrajectory:   {node.IsOnManeuverTrajectory}");
+                Logger.LogInfo($"ManeuverTrajectoryPatch:  {node.ManeuverTrajectoryPatch}");
+                Logger.LogInfo($"NodeID:                   {node.NodeID}");
+                Logger.LogInfo($"NodeName:                 {node.NodeName}");
+                Logger.LogInfo($"RelatedSimID:             {node.RelatedSimID}");
+                Logger.LogInfo($"SimTransform:             {node.SimTransform}");
+            }
+
         }
     }
 
@@ -313,7 +329,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         if ( node != null )
         {
             // ManeuverNodeData node = Nodes[SelectedNodeIndex];
-            Logger.LogInfo($"Node:");
+            Logger.LogInfo($"SpitNode: Node:");
             Logger.LogInfo($"BurnDuration:             {node.BurnDuration} s");
             Logger.LogInfo($"BurnRequiredDV:           {node.BurnRequiredDV} m/s");
             Logger.LogInfo($"BurnVector:               [{node.BurnVector.x}, {node.BurnVector.y}, {node.BurnVector.z}] = {node.BurnVector.magnitude} m/s");
@@ -382,30 +398,34 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         return lastOrbit;
     }
 
-    public void CreateManeuverNodeAtTA(Vector3d burnVector, double TrueAnomalyRad, double burnDurationOffsetFactor = -0.5)
+    public bool CreateManeuverNodeAtTA(Vector3d burnVector, double TrueAnomalyRad, double burnDurationOffsetFactor = -0.5)
     {
         // Logger.LogDebug("CreateManeuverNodeAtTA");
         PatchedConicsOrbit referencedOrbit = GetLastOrbit(true) as PatchedConicsOrbit;
         if (referencedOrbit == null)
         {
             Logger.LogWarning("CreateManeuverNodeAtTA: referencedOrbit is null. Unable to proceed.");
-            return;
+            return false;
         }
 
         double UT = referencedOrbit.GetUTforTrueAnomaly(TrueAnomalyRad, 0);
 
-        CreateManeuverNodeAtUT(burnVector, UT, burnDurationOffsetFactor);
+        return CreateManeuverNodeAtUT(burnVector, UT, burnDurationOffsetFactor);
     }
 
-    public void CreateManeuverNodeAtUT(Vector3d burnVector, double burnUT, double burnDurationOffsetFactor = -0.5)
+    public bool CreateManeuverNodeAtUT(Vector3d burnVector, double burnUT, double burnDurationOffsetFactor = -0.5)
     {
         RefreshManeuverNodes();
         if (activeVessel == null)
         {
             Logger.LogWarning($"CreateManeuverNodeAtUT: activeVessel is null. Unable to proceed.");
-            return;
+            return false;
         }
-
+        if (Nodes.Count >= maxNodes)
+        {
+            Logger.LogWarning($"CreateManeuverNodeAtUT: Max Nodes Limit ({maxNodes}) reached. Unable to proceed.");
+            return false;
+        }
         var UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
         Logger.LogDebug($"CreateManeuverNodeAtUT: burnVector  = [{burnVector.x}, {burnVector.y}, {burnVector.z}] = {burnVector.magnitude} m/s");
         Logger.LogDebug($"CreateManeuverNodeAtUT: burnUT      = {burnUT - UT} s from now");
@@ -492,6 +512,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         // Logger.LogDebug($"CreateManeuverNodeAtUT: Burn Time {nodeData.Time} s");
 
         AddManeuverNode(nodeData, burnDurationOffsetFactor);
+
+        return true;
     }
 
     private void AddManeuverNode(ManeuverNodeData nodeData, double burnDurationOffsetFactor)
@@ -499,11 +521,11 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         Logger.LogDebug("AddManeuverNode");
 
         // Add the node to the vessel's orbit. There are at least two ways to do this...
-        ManeuverPlanComponent maneuverPlan;
-        maneuverPlan = activeVessel.SimulationObject.ManeuverPlan;
-        maneuverPlan.AddNode(nodeData, true);
-        activeVessel.Orbiter.ManeuverPlanSolver.UpdateManeuverTrajectory();
-        // GameManager.Instance.Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
+        // ManeuverPlanComponent maneuverPlan;
+        // maneuverPlan = activeVessel.SimulationObject.ManeuverPlan;
+        // maneuverPlan.AddNode(nodeData, true);
+        // activeVessel.Orbiter.ManeuverPlanSolver.UpdateManeuverTrajectory();
+        GameManager.Instance.Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
 
         // For KSP2, We want the to start burns early to make them centered on the node
         var nodeTimeAdj = nodeData.BurnDuration * burnDurationOffsetFactor;
@@ -526,7 +548,9 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         Logger.LogDebug("UpdateNode");
 
         yield return new WaitForFixedUpdate();
-        
+
+        // activeVessel.Orbiter.ManeuverPlanSolver.UpdateManeuverTrajectory();
+
         MapCore mapCore = null;
         GameManager.Instance.Game.Map.TryGetMapCore(out mapCore);
         var maneuverManager = mapCore.map3D.ManeuverManager;
@@ -579,6 +603,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         // Refresh the node list
         RefreshManeuverNodes();
 
+        yield return (object)new WaitForFixedUpdate();
+
         if (activeVessel == null)
         {
             Logger.LogWarning("RefreshNodes: activeVessel is null. Unable to proceed.");
@@ -606,8 +632,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             try { maneuverPlanComponent.RefreshManeuverNodeState(i); }
             catch (NullReferenceException e)
             {
-                Logger.LogError($"RefreshNodes: Suppressed NRE for Node {i}: {e}");
-                Logger.LogError($"RefreshNodes: Node {i}: {Nodes[i]}");
+                Logger.LogError($"RefreshNodes: Pass 1: Suppressed NRE for Node {i}: {e}");
+                SpitNode(i, true);
             }
         }
 
@@ -631,8 +657,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             try { maneuverPlanComponent.RefreshManeuverNodeState(i); }
             catch (NullReferenceException e)
             {
-                Logger.LogError($"RefreshNodes: Suppressed NRE for Node {i}: {e}");
-                Logger.LogError($"RefreshNodes: Node {i}: {Nodes[i]}");
+                Logger.LogError($"RefreshNodes: Pass 2: Suppressed NRE for Node {i}: {e}");
+                SpitNode(i, true);
             }
         }
 
