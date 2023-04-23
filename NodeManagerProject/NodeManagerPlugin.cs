@@ -558,9 +558,22 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         // Manage the maneuver on the map
         if (mapCore)
         {
-            mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData);
-            // mapCore.map3D.ManeuverManager.GetNodeDataForVessels();
-            // mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(nodeData.NodeID);
+            bool mulligan = false;
+            try { mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData); }
+            catch (Exception e)
+            {
+                Logger.LogError($"UpdateNode: Suppressed Exception: {e}");
+                Logger.LogError($"UpdateNode: Wating and Trying Again...");
+                mulligan = true;
+            }
+            if (mulligan)
+            {
+                yield return new WaitForFixedUpdate();
+                mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData);
+                //mapCore.map3D.ManeuverManager.GetNodeDataForVessels();
+                //mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(nodeData.NodeID);
+            }
+
         }
     }
 
