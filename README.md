@@ -19,6 +19,18 @@ This mod is primarily meant as a service provider to other mods, which can call 
 * **currentNode**. Access via `NodeManagerPlugin.Instance.currentNode`. You can access this to check Node Manager's understanding of the current node.
 * **Nodes**. Access via `NodeManagerPlugin.Instance.Nodes`. You can use this to check the number of nodes as `NodeManagerPlugin.Instance.Nodes.Count`
 
+### NOTE: Burn Vecorts are *Not* Delta-V!
+Delta-V can be computed as the differnece between two orbital velocities (the one you want minus the one you've got). In KSP this is generally done in the *orbit velocity frame*. That last part is very inportant because, while Delta-V and BurnVector do have the same magnitude and are certainly related, they are *not* generally in the same direction. KSP needs a node's BurnVector to be expressed as a Vector3d composed of the Radial (x), Normal (y), and Prograde (z) components needed for the burn. If you have a Vector3d of the Delta-V you want, you can convert that to a BurnVector using unit vectors for the RadialPlus, NormalPlus, and Prograde vectors at the time for your burn.
+
+```cs
+    public Vector3d DeltaVToManeuverNodeCoordinates(PatchedConicsOrbit o, double UT, Vector3d dV)
+    {
+        return new Vector3d(Vector3d.Dot(o.RadialPlus(UT), dV),
+                            Vector3d.Dot(o.NormalPlus(UT), dV),
+                            Vector3d.Dot(o.Prograde(UT), dV));
+    }
+```
+
 To use this mod from your mod you will need to do one of the following:
 
 ## Hard Dependency via Nuget Package
