@@ -489,6 +489,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         if (Nodes.Count == 0) // There are no nodes
         {
             nodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, false, burnUT);
+            // orbit.PatchEndTransition = PatchTransitionType.Maneuver;
         }
         else
         {
@@ -512,6 +513,10 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             nodeData.SetManeuverState((PatchedConicsOrbit)orbit);
         }
 
+        // orbit.PatchStartTransition = PatchTransitionType.EndThrust;
+
+        // nodeData.SetManeuverState((PatchedConicsOrbit)orbit);
+
         nodeData.BurnVector = burnVector;
 
         // Logger.LogDebug($"CreateManeuverNodeAtUT: BurnVector [{burnVector.x}, {burnVector.y}, {burnVector.z}] m/s");
@@ -519,6 +524,9 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         // Logger.LogDebug($"CreateManeuverNodeAtUT: Burn Time {nodeData.Time} s");
 
         AddManeuverNode(nodeData, burnDurationOffsetFactor);
+
+        // Make sure this and any other nodes are OK
+        // StartCoroutine(RefreshNodes());
 
         return true;
     }
@@ -538,15 +546,19 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         var nodeTimeAdj = nodeData.BurnDuration * burnDurationOffsetFactor;
 
         // Update the node to put a gizmo on it
-        StartCoroutine(UpdateNode(nodeData));
+        StartCoroutine(UpdateNode(nodeData, nodeTimeAdj));
 
         // Refresh the node list
         RefreshManeuverNodes();
 
+        //var PatchedConicsList = activeVessel?.Orbiter?.ManeuverPlanSolver?.PatchedConicsList;
+        //var nextOrbit = PatchedConicsList[0];
+        //Logger.LogDebug($"AddManeuverNode: Next Orbit: {nextOrbit}");
+
         // Logger.LogDebug("AddManeuverNode Done");
     }
 
-    private IEnumerator UpdateNode(ManeuverNodeData nodeData)
+    private IEnumerator UpdateNode(ManeuverNodeData nodeData, double nodeTimeAdj)
     {
         Logger.LogDebug("UpdateNode");
 
@@ -574,6 +586,14 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
                 //mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(nodeData.NodeID);
             }
 
+        }
+
+        if (nodeTimeAdj != 0)
+        {
+            var simObject = activeVessel?.SimulationObject;
+            ManeuverPlanComponent maneuverPlanComponent = simObject?.FindComponent<ManeuverPlanComponent>();
+            try { maneuverPlanComponent.UpdateTimeOnNode(nodeData, nodeData.Time += nodeTimeAdj); }
+            catch (Exception e) { Logger.LogError($"UpdateNode: Suppressed Exception: {e}"); }
         }
     }
 
@@ -634,11 +654,14 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         for (int i = 0; i < Nodes.Count; i++) // was i = SelectedNodeIndex
         {
             // Logger.LogDebug($"RefreshNodes: Refreshing Node {i}");
-            try { maneuverPlanComponent.RefreshManeuverNodeState(i); }
-            catch (NullReferenceException e)
+            if (Nodes[i].ManeuverTrajectoryPatch != null)
             {
-                Logger.LogError($"RefreshNodes: Pass 1: Suppressed NRE for Node {i}: {e}");
-                SpitNode(i, true);
+                try { maneuverPlanComponent.RefreshManeuverNodeState(i); }
+                catch (NullReferenceException e)
+                {
+                    Logger.LogError($"RefreshNodes: Pass 1: Suppressed NRE for Node {i}: {e}");
+                    SpitNode(i, true);
+                }
             }
         }
 
@@ -653,12 +676,15 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
 
         for (int i = 0; i < Nodes.Count; i++) // was i = SelectedNodeIndex
         {
-            // Logger.LogDebug($"RefreshNodes: Refreshing Node {i}");
-            try { maneuverPlanComponent.RefreshManeuverNodeState(i); }
-            catch (NullReferenceException e)
+            if (Nodes[i].ManeuverTrajectoryPatch != null)
             {
-                Logger.LogError($"RefreshNodes: Pass 2: Suppressed NRE for Node {i}: {e}");
-                SpitNode(i, true);
+                // Logger.LogDebug($"RefreshNodes: Refreshing Node {i}");
+                try { maneuverPlanComponent.RefreshManeuverNodeState(i); }
+                catch (NullReferenceException e)
+                {
+                    Logger.LogError($"RefreshNodes: Pass 2: Suppressed NRE for Node {i}: {e}");
+                    SpitNode(i, true);
+                }
             }
         }
     }
