@@ -22,14 +22,14 @@ if "%Create_zip%"=="True" (
 
 call copy_to_ksp.bat %ConfigurationName% %Project_name%
 
-if "%Open_KSP2%"=="True" (
-    "%KSP2_LOCATION%\KSP2_x64.exe"
-)
-
 @REM copy to dependencies dll
 set SOURCE_DIR=..\%ConfigurationName%\BepInEx\plugins\%PROJECT_NAME%\
 SET Copies=%PostBuildCopy:;= %
 FOR %%e in (%Copies%) DO (
     echo copy to ..\%%e
     xcopy /Y /s %SOURCE_DIR%\%PROJECT_NAME%.dll ..\%%e
+)
+
+if "%Open_KSP2%"=="True" (
+    "%KSP2_LOCATION%\KSP2_x64.exe"
 )
