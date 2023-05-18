@@ -596,15 +596,31 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     {
         Logger.LogDebug("UpdateNode");
 
+        if (nodeTimeAdj != 0)
+        {
+            var simObject = activeVessel?.SimulationObject;
+            ManeuverPlanComponent maneuverPlanComponent = simObject?.FindComponent<ManeuverPlanComponent>();
+            try { maneuverPlanComponent.UpdateTimeOnNode(nodeData, nodeData.Time += nodeTimeAdj); }
+            catch (Exception e) { Logger.LogError($"UpdateNode: Suppressed Exception: {e}"); }
+        }
+
         yield return new WaitForFixedUpdate();
 
-        MapCore mapCore = null;
-        GameManager.Instance.Game.Map.TryGetMapCore(out mapCore);
+        bool mulligan = false;
+
+        GameManager.Instance.Game.Map.TryGetMapCore(out MapCore mapCore);
 
         // Manage the maneuver on the map
         if (mapCore)
         {
-            bool mulligan = false;
+            // This does it like it's done if the vessel just changed
+            // mapCore.map3D.ManeuverManager.RemoveAll(); // Called right before GetNodeDataForVessels in OnVesselChanged
+            // mapCore.map3D.ManeuverManager.GetNodeDataForVessels(); // calls GenerateGizmosForNodes, which calls CreateGizmoForLocation
+
+            // This trys to do it like it's done if the player created the node manually
+            // mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData);
+
+            // This is the Mulligan way with an extra yield return if we hit a snag
             try { mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData); }
             catch (Exception e)
             {
@@ -620,15 +636,27 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
                 //mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(nodeData.NodeID);
             }
 
+            // Call sequence when the player creates a node maually in the GUI
+            //UnityEngine.EventSystems.EventSystem:Update()
+            //ModifiedInputModule: Process()
+            //ModifiedInputModule: ProcessMouseEvent()
+            //ModifiedInputModule: ProcessMouseEvent(Int32)
+            //ModifiedInputModule: ProcessMousePress(MouseButtonEventData, MouseButton)
+            //UnityEngine.EventSystems.ExecuteEvents:Execute(GameObject, BaseEventData, EventFunction1)
+            //UIAction_Void_Button: OnButtonLeftDown()
+            //KSP.Api.CoreTypes.DelegateAction:Invoke(Object[])
+            //KSP.Api.CoreTypes.DelegateAction:InternalInvoke(Boolean, Boolean, Object[])
+            //System.Delegate:DynamicInvoke(Object[])
+            //KSP.Map.Map3DManeuvers:OnAddManeuver()
+            //KSP.Map.Map3DManeuvers:CreateGizmoForLocation(ManeuverNodeData)
+            //KSP.Map.Map3DManeuvers:AcquireRawGizmoObject()
+            //KSP.Map.MapManeuverGizmo:Configure(Camera)
+            //KSP.Messages.MessageCenter:Publish(ManeuverCreatedMessage)
+            //KSP.Messages.MessageCenter:Publish(Type, MessageCenterMessage)
+
         }
 
-        if (nodeTimeAdj != 0)
-        {
-            var simObject = activeVessel?.SimulationObject;
-            ManeuverPlanComponent maneuverPlanComponent = simObject?.FindComponent<ManeuverPlanComponent>();
-            try { maneuverPlanComponent.UpdateTimeOnNode(nodeData, nodeData.Time += nodeTimeAdj); }
-            catch (Exception e) { Logger.LogError($"UpdateNode: Suppressed Exception: {e}"); }
-        }
+        yield return new WaitForFixedUpdate();
     }
 
     public bool AddNode(double burnUT = 0)
