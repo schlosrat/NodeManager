@@ -15,4 +15,4 @@ set Close_KSP2=True
 set Open_KSP2=True
 
 @REM Copy to Other Mods repos
-set PostBuildCopy=..\FlightPlan\FlightPlanProject\external_dlls;..\ManeuverNodeController\ManeuverNodeControllerProject\external_dlls
+set PostBuildCopy=..\FlightPlan\external_dlls;..\ManeuverNodeController\external_dlls
