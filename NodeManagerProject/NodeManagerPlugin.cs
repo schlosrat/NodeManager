@@ -358,6 +358,40 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         }
     }
 
+    public void DeleteNode(int SelectedNodeIndex)
+    {
+        RefreshManeuverNodes();
+        List<ManeuverNodeData> nodesToDelete = new List<ManeuverNodeData>();
+        ManeuverNodeData nodeToDelete;
+        double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
+
+        // This should never happen, but better be safe
+        if (SelectedNodeIndex + 1 > Nodes.Count)
+            SelectedNodeIndex = Math.Max(0, Nodes.Count - 1);
+
+        if (Nodes[SelectedNodeIndex].Time < UT && !Nodes[SelectedNodeIndex].IsOnManeuverTrajectory)
+        {
+            nodeToDelete = Nodes[SelectedNodeIndex];
+            nodesToDelete.Add(nodeToDelete);
+            GameManager.Instance.Game.SpaceSimulation.Maneuvers.RemoveNodesFromVessel(activeVessel.GlobalId, nodesToDelete);
+        }
+    }
+
+    public void DeletePastNodes()
+    {
+        RefreshManeuverNodes();
+        List<ManeuverNodeData> nodesToDelete = new List<ManeuverNodeData>();
+        ManeuverNodeData nodeToDelete;
+        double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
+
+        foreach (ManeuverNodeData node in Nodes)
+        {
+            if (!nodesToDelete.Contains(node) && (!node.IsOnManeuverTrajectory || node.Time < UT))
+                nodesToDelete.Add(node);
+        }
+        GameManager.Instance.Game.SpaceSimulation.Maneuvers.RemoveNodesFromVessel(activeVessel.GlobalId, nodesToDelete);
+    }
+
     public void DeleteNodes(int SelectedNodeIndex)
     {
         RefreshManeuverNodes();
