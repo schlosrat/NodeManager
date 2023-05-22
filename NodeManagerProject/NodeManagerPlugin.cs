@@ -95,7 +95,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     // private static ManualLogSource Logger = BepInEx.Logging.Logger.CreateLogSource("ManeuverNodeController.Utility");
     //public ManualLogSource logger;
     public new static ManualLogSource Logger { get; set; }
-    private GameInstance game;
+    // private GameInstance game;
 
     /// <summary>
     /// Runs when the mod is first initialized.
@@ -106,18 +106,20 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
 
         Instance = this;
 
-        game = GameManager.Instance.Game;
+        // game = GameManager.Instance.Game;
         Logger = base.Logger;
 
-        GameManager.Instance.Game.Messages.Subscribe<ManeuverRemovedMessage>(msg =>
+        // GameManager.Instance.Game.Messages.Subscribe<ManeuverRemovedMessage>(msg =>
+        Game.Messages.Subscribe<ManeuverRemovedMessage>(msg =>
         {
-            var message = (ManeuverRemovedMessage)msg;
+            MessageCenterMessage message = (ManeuverRemovedMessage)msg;
             OnManeuverRemovedMessage(message);
         });
 
-        GameManager.Instance.Game.Messages.Subscribe<ManeuverCreatedMessage>(msg =>
+        // GameManager.Instance.Game.Messages.Subscribe<ManeuverCreatedMessage>(msg =>
+        Game.Messages.Subscribe<ManeuverCreatedMessage>(msg =>
         {
-            var message = (ManeuverCreatedMessage)msg;
+            MessageCenterMessage message = (ManeuverCreatedMessage)msg;
             OnManeuverCreatedMessage(message);
         });
 
@@ -260,7 +262,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         GameObject.Find("BTN-ResonantOrbitCalculatorFlight")?.GetComponent<UIValue_WriteBool_Toggle>()?.SetValue(false);
         GameObject.Find("BTN-ResonantOrbitCalculatorOAB")?.GetComponent<UIValue_WriteBool_Toggle>()?.SetValue(false);
         showGUI = false;
-        GameManager.Instance.Game.Input.Enable();
+        // GameManager.Instance.Game.Input.Enable();
+        Game.Input.Enable();
     }
 
     public void RefreshActiveVesselAndCurrentManeuver()
@@ -363,7 +366,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         RefreshManeuverNodes();
         List<ManeuverNodeData> nodesToDelete = new List<ManeuverNodeData>();
         ManeuverNodeData nodeToDelete;
-        double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
+        // double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
+        double UT = Game.UniverseModel.UniversalTime;
 
         // This should never happen, but better be safe
         if (SelectedNodeIndex + 1 > Nodes.Count)
@@ -373,7 +377,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         {
             nodeToDelete = Nodes[SelectedNodeIndex];
             nodesToDelete.Add(nodeToDelete);
-            GameManager.Instance.Game.SpaceSimulation.Maneuvers.RemoveNodesFromVessel(activeVessel.GlobalId, nodesToDelete);
+            // GameManager.Instance.Game.SpaceSimulation.Maneuvers.RemoveNodesFromVessel(activeVessel.GlobalId, nodesToDelete);
+            Game.SpaceSimulation.Maneuvers.RemoveNodesFromVessel(activeVessel.GlobalId, nodesToDelete);
         }
     }
 
@@ -382,14 +387,16 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         RefreshManeuverNodes();
         List<ManeuverNodeData> nodesToDelete = new List<ManeuverNodeData>();
         ManeuverNodeData nodeToDelete;
-        double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
+        // double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
+        double UT = Game.UniverseModel.UniversalTime;
 
         foreach (ManeuverNodeData node in Nodes)
         {
             if (!nodesToDelete.Contains(node) && (!node.IsOnManeuverTrajectory || node.Time < UT))
                 nodesToDelete.Add(node);
         }
-        GameManager.Instance.Game.SpaceSimulation.Maneuvers.RemoveNodesFromVessel(activeVessel.GlobalId, nodesToDelete);
+        // GameManager.Instance.Game.SpaceSimulation.Maneuvers.RemoveNodesFromVessel(activeVessel.GlobalId, nodesToDelete);
+        Game.SpaceSimulation.Maneuvers.RemoveNodesFromVessel(activeVessel.GlobalId, nodesToDelete);
     }
 
     public void DeleteNodes(int SelectedNodeIndex)
@@ -401,7 +408,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         if (SelectedNodeIndex + 1 > Nodes.Count)
             SelectedNodeIndex = Math.Max(0, Nodes.Count - 1);
 
-        var nodeToDelete = Nodes[SelectedNodeIndex];
+        ManeuverNodeData nodeToDelete = Nodes[SelectedNodeIndex];
         nodesToDelete.Add(nodeToDelete);
 
         foreach (ManeuverNodeData node in Nodes)
@@ -409,7 +416,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             if (!nodesToDelete.Contains(node) && (!nodeToDelete.IsOnManeuverTrajectory || nodeToDelete.Time < node.Time))
                 nodesToDelete.Add(node);
         }
-        GameManager.Instance.Game.SpaceSimulation.Maneuvers.RemoveNodesFromVessel(activeVessel.GlobalId, nodesToDelete);
+        // GameManager.Instance.Game.SpaceSimulation.Maneuvers.RemoveNodesFromVessel(activeVessel.GlobalId, nodesToDelete);
+        Game.SpaceSimulation.Maneuvers.RemoveNodesFromVessel(activeVessel.GlobalId, nodesToDelete);
     }
 
     private IPatchedOrbit GetLastOrbit(bool silent = true)
@@ -470,7 +478,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             Logger.LogWarning($"CreateManeuverNodeAtUT: Max Nodes Limit ({maxNodes}) reached. Unable to proceed.");
             return false;
         }
-        var UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
+        // var UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
+        double UT = Game.UniverseModel.UniversalTime;
         Logger.LogDebug($"CreateManeuverNodeAtUT: burnVector  = [{burnVector.x}, {burnVector.y}, {burnVector.z}] = {burnVector.magnitude} m/s");
         Logger.LogDebug($"CreateManeuverNodeAtUT: burnUT      = {burnUT - UT} s from now");
         Logger.LogDebug($"CreateManeuverNodeAtUT: offsetFac   = {burnDurationOffsetFactor}");
@@ -574,10 +583,11 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         // maneuverPlan = activeVessel.SimulationObject.ManeuverPlan;
         // maneuverPlan.AddNode(nodeData, true);
         // activeVessel.Orbiter.ManeuverPlanSolver.UpdateManeuverTrajectory();
-        GameManager.Instance.Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
+        // GameManager.Instance.Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
+        Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
 
         // For KSP2, We want the to start burns early to make them centered on the node
-        var nodeTimeAdj = nodeData.BurnDuration * burnDurationOffsetFactor;
+        double nodeTimeAdj = nodeData.BurnDuration * burnDurationOffsetFactor;
 
         // Update the node to put a gizmo on it
         StartCoroutine(UpdateNode(nodeData, nodeTimeAdj));
@@ -604,11 +614,16 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             catch (Exception e) { Logger.LogError($"UpdateNode: Suppressed Exception: {e}"); }
         }
 
+        // Note from Untoldwind (5/22/23): As for the ManeuverPlanSolver: As far as I was able to a gather the actual solver runs
+        // in a background thread using the "Unity.Jobs" system (i.e. outside the main game loop), so waiting for one-tick might
+        // not be sufficient to get a result. I suppose you have to wait for "IPatchedOrbit.ActivePatch" to become true.
+
         yield return new WaitForFixedUpdate();
 
         bool mulligan = false;
 
-        GameManager.Instance.Game.Map.TryGetMapCore(out MapCore mapCore);
+        // GameManager.Instance.Game.Map.TryGetMapCore(out MapCore mapCore);
+        Game.Map.TryGetMapCore(out MapCore mapCore);
 
         // Manage the maneuver on the map
         if (mapCore)
@@ -664,7 +679,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         RefreshActiveVesselAndCurrentManeuver();
 
         // Define empty node data
-        double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
+        // double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
+        double UT = Game.UniverseModel.UniversalTime;
         if (burnUT < UT)
         {
             if (activeVessel.Orbit.eccentricity < 1 && Nodes.Count == 0)
@@ -709,7 +725,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         for (int i = 0; i < Nodes.Count; i++) // was i = SelectedNodeIndex
         {
             // Logger.LogDebug($"RefreshNodes: Updateing Node {i}");
-            var node = Nodes[i];
+            ManeuverNodeData node = Nodes[i];
             maneuverPlanComponent.UpdateNodeDetails(node);
         }
 
@@ -732,7 +748,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         for (int i = 0; i < Nodes.Count; i++) // was i = SelectedNodeIndex
         {
             // Logger.LogDebug($"RefreshNodes: Updateing Node {i}");
-            var node = Nodes[i];
+            ManeuverNodeData node = Nodes[i];
             maneuverPlanComponent.UpdateNodeDetails(node);
         }
 
