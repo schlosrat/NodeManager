@@ -141,7 +141,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         //Appbar.RegisterAppButton(
         //    "Node Manager",
         //    ToolbarFlightButtonID,
-        //    AssetManager.GetAsset<Texture2D>($"{SpaceWarpMetadata.ModID}/images/icon.png"),
+        //    AssetManager.GetAsset<Texture2D>($"{Info.Metadata.GUID}/images/icon.png"),
         //    // Toggle the GUI the MicroEngineer way
         //    delegate { showGUI = !showGUI; }
         //);
@@ -150,7 +150,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         //Appbar.RegisterOABAppButton(
         //    "Node Manager",
         //    ToolbarOABButtonID,
-        //    AssetManager.GetAsset<Texture2D>($"{SpaceWarpMetadata.ModID}/images/icon.png"),
+        //    AssetManager.GetAsset<Texture2D>($"{Info.Metadata.GUID}/images/icon.png"),
         //    // Toggle the GUI the MicroEngineer way
         //    delegate { showGUI = !showGUI; }
         //);
@@ -618,7 +618,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         // in a background thread using the "Unity.Jobs" system (i.e. outside the main game loop), so waiting for one-tick might
         // not be sufficient to get a result. I suppose you have to wait for "IPatchedOrbit.ActivePatch" to become true.
 
-        yield return new WaitForFixedUpdate();
+        while (!activeVessel.Orbit.ActivePatch)
+            yield return new WaitForFixedUpdate();
 
         bool mulligan = false;
 
