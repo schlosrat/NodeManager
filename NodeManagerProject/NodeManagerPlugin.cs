@@ -579,12 +579,22 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         Logger.LogDebug("AddManeuverNode");
 
         // Add the node to the vessel's orbit. There are at least two ways to do this...
-        // ManeuverPlanComponent maneuverPlan;
-        // maneuverPlan = activeVessel.SimulationObject.ManeuverPlan;
-        // maneuverPlan.AddNode(nodeData, true);
-        // activeVessel.Orbiter.ManeuverPlanSolver.UpdateManeuverTrajectory();
-        // GameManager.Instance.Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
-        Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
+        bool useAddNode = false;
+        if (useAddNode) // DONT USE THIS PATH!
+        {
+            // You can add nodes this way, but only so many before the game barfs (4 or 5)
+            Logger.LogInfo("AddManeuverNode: Using AddNode method to create the node");
+            ManeuverPlanComponent maneuverPlan;
+            maneuverPlan = activeVessel.SimulationObject.ManeuverPlan;
+            maneuverPlan.AddNode(nodeData, false); // false here because we're building a node, not rebuilding one
+            activeVessel.Orbiter.ManeuverPlanSolver.UpdateManeuverTrajectory();
+        }
+        else
+        {
+            // You can reliably add as many nodes as you like this way
+            Logger.LogInfo("AddManeuverNode: Using AddNodeToVessel method to create the node");
+            Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
+        }
 
         // For KSP2, We want the to start burns early to make them centered on the node
         double nodeTimeAdj = nodeData.BurnDuration * burnDurationOffsetFactor;
@@ -601,6 +611,56 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
 
         // Logger.LogDebug("AddManeuverNode Done");
     }
+
+    // If we call Game.SpaceSimulation.Maneuvers.AddNodeToVessel
+    // we get KSP.SimManeuver.ManeuverProvider.AddNodeToVessel
+    //public bool AddNodeToVessel(ManeuverNodeData node)
+    //{
+    //    ManeuverPlanComponent component = this._game.UniverseModel.FindVesselComponent(node.RelatedSimID)?.SimulationObject.FindComponent<ManeuverPlanComponent>();
+    //    if (component == null)
+    //        return false;
+    //    int num = component.AddNode(node, false) ? 1 : 0;
+    //    if (num == 0)
+    //        return num != 0;
+    //    this.UpdateActiveNode();
+    //    return num != 0;
+    //}
+
+    // If we call activeVessel.SimulationObject.ManeuverPlan.AddNode
+    // we get: KSP.Sim.impl.ManeuverPlanComponent.AddNode:
+    //public bool AddNode(ManeuverNodeData nodeData, bool rebuilding)
+    //{
+    //    bool flag = false;
+    //    if (!this.TryGetNode(nodeData.NodeID, out ManeuverNodeData _))
+    //    {
+    //        Vector3d reducedBurnVectorChange = Vector3d.zero;
+    //        if (rebuilding)
+    //        {
+    //            if (!this.EnoughDeltaVToAddNodeOnRebuild(nodeData, out reducedBurnVectorChange))
+    //                return flag;
+    //        }
+    //        else if (!this.EnoughDeltaVToAddNode())
+    //        {
+    //            if (this.SimulationObject.VesselDeltaV.TotalDeltaVActual == 0.0 && this.IsEngineInAirbreathingMode(this.SimulationObject.VesselDeltaV))
+    //                GameManager.Instance.Game.Messages.Publish<EngineInAirBreathingModeMessage>(GameManager.Instance.Game.Messages.CreateMessage<EngineInAirBreathingModeMessage>());
+    //            else
+    //                GameManager.Instance.Game.Messages.Publish<CannotPlaceManeuverNodeWhileOutOfFuelMessage>(GameManager.Instance.Game.Messages.CreateMessage<CannotPlaceManeuverNodeWhileOutOfFuelMessage>());
+    //            return flag;
+    //        }
+    //        flag = true;
+    //        this._currentNodes.Add(nodeData);
+    //        this.UpdateNodeDetails(nodeData);
+    //        if (reducedBurnVectorChange != Vector3d.zero)
+    //            this.UpdateChangeOnNode(nodeData.NodeID, (Vector3)reducedBurnVectorChange);
+    //        Action<System.Guid> maneuverNodeAdded = this.OnManeuverNodeAdded;
+    //        if (maneuverNodeAdded != null)
+    //            maneuverNodeAdded(nodeData.NodeID);
+    //        this.CommitToState();
+    //    }
+    //    else
+    //        GlobalLog.Error(LogFilter.Gameplay, (object)"Attempting to add node that already exists in _currentNodes");
+    //    return flag;
+    //}
 
     private IEnumerator UpdateNode(ManeuverNodeData nodeData, double nodeTimeAdj)
     {
