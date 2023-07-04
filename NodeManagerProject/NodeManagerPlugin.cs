@@ -592,6 +592,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         else
         {
             // You can reliably add as many nodes as you like this way
+            // NOTE: AddNodeToVessel calls maneuverPlan.AddNode()
             Logger.LogInfo("AddManeuverNode: Using AddNodeToVessel method to create the node");
             Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
         }
@@ -679,7 +680,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         // not be sufficient to get a result. I suppose you have to wait for "IPatchedOrbit.ActivePatch" to become true.
 
         while (!activeVessel.Orbit.ActivePatch)
-            yield return new WaitForFixedUpdate();
+            yield return new WaitForSeconds(0.1f); // WaitForFixedUpdate();
 
         bool mulligan = false;
 
@@ -700,13 +701,13 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             try { mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData); }
             catch (Exception e)
             {
-                Logger.LogError($"UpdateNode: Suppressed Exception: {e}");
-                Logger.LogError($"UpdateNode: Wating and Trying Again...");
+                Logger.LogDebug($"UpdateNode: Suppressed Exception: {e}");
+                Logger.LogDebug($"UpdateNode: Wating and Trying Again...");
                 mulligan = true;
             }
             if (mulligan)
             {
-                yield return new WaitForFixedUpdate();
+                yield return new WaitForSeconds(0.1f); // WaitForFixedUpdate();
                 mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData);
                 //mapCore.map3D.ManeuverManager.GetNodeDataForVessels();
                 //mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(nodeData.NodeID);
