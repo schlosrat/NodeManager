@@ -213,7 +213,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     private void OnGUI()
     {
         GUIenabled = false;
-        var gameState = Game?.GlobalGameState?.GetState();
+        var gameState = Game.GlobalGameState.GetState();
         if (gameState == GameState.Map3DView) GUIenabled = true;
         if (gameState == GameState.FlightView) GUIenabled = true;
 
@@ -488,130 +488,178 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         if (burnUT < UT + 1) // Don't set node to now or in the past
             burnUT = UT + 1;
 
-        // Get the patch to put this node on
-        ManeuverPlanSolver maneuverPlanSolver = activeVessel.Orbiter?.ManeuverPlanSolver;
-        IPatchedOrbit orbit = null;
+        IPatchedOrbit patch = null;
+        bool isManeuver = false;
         // maneuverPlanSolver.FindPatchContainingUt(UT, maneuverPlanSolver.ManeuverTrajectory, out orbit, out int _);
         if ( Nodes.Count > 0 )
         {
-            for (int i = 0; i < Nodes.Count - 1; i++)
+            if ( burnUT > Nodes[0].Time )
             {
-                if (burnUT > Nodes[i].Time && burnUT < Nodes[i + 1].Time)
-                {
-                    orbit = Nodes[i + 1].ManeuverTrajectoryPatch;
-                    Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to Node[{i + 1}]'s ManeuverTrajectoryPatch");
-                }
-            }
-            if (orbit == null)
-            {
-                Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to activeVessel.Orbit");
-                orbit = activeVessel.Orbit;
+                isManeuver = true;
+                // Get the patch to put this node on
+                ManeuverPlanSolver maneuverPlanSolver = activeVessel.Orbiter?.ManeuverPlanSolver;
+                maneuverPlanSolver.FindPatchContainingUt(UT, maneuverPlanSolver.ManeuverTrajectory, out patch, out int _);
             }
         }
-        else
+        ManeuverNodeData maneuverNodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, isManeuver, burnUT);
+        if (maneuverNodeData.IsOnManeuverTrajectory)
+            maneuverNodeData.SetManeuverState(patch as PatchedConicsOrbit);
+        maneuverNodeData.BurnVector = burnVector;
+        if (!Game.SpaceSimulation.Maneuvers.AddNodeToVessel(maneuverNodeData))
+            return false;
+        Game.Map.TryGetMapCore(out MapCore mapCore);
+        if (mapCore != null)
         {
-            Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to activeVessel.Orbit");
-            orbit = activeVessel.Orbit;
+            try { mapCore.map3D.ManeuverManager.CreateGizmoForLocation(maneuverNodeData); }
+            catch (Exception ex) { Logger.LogDebug($"UpdateNode: Suppressed Exception: {ex}"); }
+            mapCore.map3D.ManeuverManager.HideManeuverPopup();
         }
 
-        // IPatchedOrbit orbit = referencedOrbit;
-        // orbit.PatchStartTransition = PatchTransitionType.Maneuver;
-        // orbit.PatchEndTransition = PatchTransitionType.Final;
-        //Initial,
-        //Final,
-        //Encounter,
-        //Escape,
-        //Maneuver,
-        //Collision,
-        //EndThrust,
-        //PartialOutOfFuel,
-        //CompletelyOutOfFuel,
-
-        // Build the node data
-        ManeuverNodeData nodeData;
-        if (Nodes.Count == 0) // There are no nodes
-        {
-            nodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, false, burnUT);
-            // orbit.PatchEndTransition = PatchTransitionType.Maneuver;
-        }
-        else
-        {
-            if (burnUT < Nodes[0].Time) // request time is before the first node
-            {
-                nodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, false, burnUT);
-                orbit.PatchEndTransition = PatchTransitionType.Maneuver;
-            }
-            else if (burnUT > Nodes[Nodes.Count - 1].Time) // requested time is after the last node
-            {
-                nodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, true, burnUT);
-                orbit.PatchEndTransition = PatchTransitionType.Final;
-            }
-            else // request time is between existing nodes
-            {
-                nodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, true, burnUT);
-                orbit.PatchEndTransition = PatchTransitionType.Maneuver;
-            }
-            orbit.PatchStartTransition = PatchTransitionType.EndThrust;
-
-            nodeData.SetManeuverState((PatchedConicsOrbit)orbit);
-        }
-
-        // orbit.PatchStartTransition = PatchTransitionType.EndThrust;
-
-        // nodeData.SetManeuverState((PatchedConicsOrbit)orbit);
-
-        nodeData.BurnVector = burnVector;
-
-        // Logger.LogDebug($"CreateManeuverNodeAtUT: BurnVector [{burnVector.x}, {burnVector.y}, {burnVector.z}] m/s");
-        // Logger.LogDebug($"CreateManeuverNodeAtUT: BurnDuration {nodeData.BurnDuration} s");
-        // Logger.LogDebug($"CreateManeuverNodeAtUT: Burn Time {nodeData.Time} s");
-
-        AddManeuverNode(nodeData, burnDurationOffsetFactor);
-
-        // Make sure this and any other nodes are OK
-        // StartCoroutine(RefreshNodes());
-
-        return true;
-    }
-
-    private void AddManeuverNode(ManeuverNodeData nodeData, double burnDurationOffsetFactor)
-    {
-        Logger.LogDebug("AddManeuverNode");
-
-        // Add the node to the vessel's orbit. There are at least two ways to do this...
-        bool useAddNode = false;
-        if (useAddNode) // DONT USE THIS PATH!
-        {
-            // You can add nodes this way, but only so many before the game barfs (4 or 5)
-            Logger.LogInfo("AddManeuverNode: Using AddNode method to create the node");
-            ManeuverPlanComponent maneuverPlan;
-            maneuverPlan = activeVessel.SimulationObject.ManeuverPlan;
-            maneuverPlan.AddNode(nodeData, false); // false here because we're building a node, not rebuilding one
-            activeVessel.Orbiter.ManeuverPlanSolver.UpdateManeuverTrajectory();
-        }
-        else
-        {
-            // You can reliably add as many nodes as you like this way
-            // NOTE: AddNodeToVessel calls maneuverPlan.AddNode()
-            Logger.LogInfo("AddManeuverNode: Using AddNodeToVessel method to create the node");
-            Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
-        }
-
-        // For KSP2, We want the to start burns early to make them centered on the node
-        double nodeTimeAdj = nodeData.BurnDuration * burnDurationOffsetFactor;
+        // For KSP2, We want to be able to start burns early to make them centered on the node
+        double nodeTimeAdj = maneuverNodeData.BurnDuration * burnDurationOffsetFactor;
 
         // Update the node to put a gizmo on it
-        StartCoroutine(UpdateNode(nodeData, nodeTimeAdj));
+        // StartCoroutine(UpdateNode(maneuverNodeData, nodeTimeAdj));
+
+        if ( nodeTimeAdj != 0 )
+        {
+            // var simObject = activeVessel?.SimulationObject;
+            // ManeuverPlanComponent maneuverPlanComponent = simObject?.FindComponent<ManeuverPlanComponent>();
+            try
+            {
+                Game.SpaceSimulation.Maneuvers.UpdateTimeOnNode(maneuverNodeData, maneuverNodeData.Time += nodeTimeAdj, mapCore.map3D.ManeuverManager._lookupGizmo.Values);
+                Game.SpaceSimulation.Maneuvers.UpdateActiveNode();
+                Game.SpaceSimulation.Maneuvers.UpdateAllChildNodeDetails(maneuverNodeData, mapCore.map3D.ManeuverManager._lookupGizmo.Values);
+            }
+            catch (Exception e) { Logger.LogError($"UpdateNode: Suppressed Exception: {e}"); }
+        }
 
         // Refresh the node list
         RefreshManeuverNodes();
 
-        //var PatchedConicsList = activeVessel?.Orbiter?.ManeuverPlanSolver?.PatchedConicsList;
-        //var nextOrbit = PatchedConicsList[0];
-        //Logger.LogDebug($"AddManeuverNode: Next Orbit: {nextOrbit}");
+        return true;
 
-        // Logger.LogDebug("AddManeuverNode Done");
+        //IPatchedOrbit orbit = null;
+        //if (Nodes.Count > 0)
+        //{
+        //    for (int i = 0; i < Nodes.Count - 1; i++)
+        //    {
+        //        if (burnUT > Nodes[i].Time && burnUT < Nodes[i + 1].Time)
+        //        {
+        //            orbit = Nodes[i + 1].ManeuverTrajectoryPatch;
+        //            Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to Node[{i + 1}]'s ManeuverTrajectoryPatch");
+        //        }
+        //    }
+        //    if (orbit == null)
+        //    {
+        //        Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to activeVessel.Orbit");
+        //        orbit = activeVessel.Orbit;
+        //    }
+        //}
+        //else
+        //{
+        //    Logger.LogDebug($"CreateManeuverNodeAtUT: Attaching node to activeVessel.Orbit");
+        //    orbit = activeVessel.Orbit;
+        //}
+
+        //// IPatchedOrbit orbit = referencedOrbit;
+        //// orbit.PatchStartTransition = PatchTransitionType.Maneuver;
+        //// orbit.PatchEndTransition = PatchTransitionType.Final;
+        ////Initial,
+        ////Final,
+        ////Encounter,
+        ////Escape,
+        ////Maneuver,
+        ////Collision,
+        ////EndThrust,
+        ////PartialOutOfFuel,
+        ////CompletelyOutOfFuel,
+
+        //// Build the node data
+        //ManeuverNodeData nodeData;
+        //if (Nodes.Count == 0) // There are no nodes
+        //{
+        //    nodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, false, burnUT);
+        //    // orbit.PatchEndTransition = PatchTransitionType.Maneuver;
+        //}
+        //else
+        //{
+        //    if (burnUT < Nodes[0].Time) // request time is before the first node
+        //    {
+        //        nodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, false, burnUT);
+        //        orbit.PatchEndTransition = PatchTransitionType.Maneuver;
+        //    }
+        //    else if (burnUT > Nodes[Nodes.Count - 1].Time) // requested time is after the last node
+        //    {
+        //        nodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, true, burnUT);
+        //        orbit.PatchEndTransition = PatchTransitionType.Final;
+        //    }
+        //    else // request time is between existing nodes
+        //    {
+        //        nodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, true, burnUT);
+        //        orbit.PatchEndTransition = PatchTransitionType.Maneuver;
+        //    }
+        //    orbit.PatchStartTransition = PatchTransitionType.EndThrust;
+
+        //    nodeData.SetManeuverState((PatchedConicsOrbit)orbit);
+        //}
+
+        //// orbit.PatchStartTransition = PatchTransitionType.EndThrust;
+
+        //// nodeData.SetManeuverState((PatchedConicsOrbit)orbit);
+
+        //nodeData.BurnVector = burnVector;
+
+        //// Logger.LogDebug($"CreateManeuverNodeAtUT: BurnVector [{burnVector.x}, {burnVector.y}, {burnVector.z}] m/s");
+        //// Logger.LogDebug($"CreateManeuverNodeAtUT: BurnDuration {nodeData.BurnDuration} s");
+        //// Logger.LogDebug($"CreateManeuverNodeAtUT: Burn Time {nodeData.Time} s");
+
+        //AddManeuverNode(nodeData, burnDurationOffsetFactor);
+
+        //// Make sure this and any other nodes are OK
+        //// StartCoroutine(RefreshNodes());
+
+        //return true;
     }
+
+    //private void AddManeuverNode(ManeuverNodeData nodeData, double burnDurationOffsetFactor)
+    //{
+    //    Logger.LogDebug("AddManeuverNode");
+
+    //    // Add the node to the vessel's orbit. There are at least two ways to do this...
+    //    bool useAddNode = false;
+    //    if (useAddNode) // DONT USE THIS PATH!
+    //    {
+    //        // You can add nodes this way, but only so many before the game barfs (4 or 5)
+    //        Logger.LogInfo("AddManeuverNode: Using AddNode method to create the node");
+    //        ManeuverPlanComponent maneuverPlan;
+    //        maneuverPlan = activeVessel.SimulationObject.ManeuverPlan;
+    //        maneuverPlan.AddNode(nodeData, false); // false here because we're building a node, not rebuilding one
+    //        activeVessel.Orbiter.ManeuverPlanSolver.UpdateManeuverTrajectory();
+    //    }
+    //    else
+    //    {
+    //        // You can reliably add as many nodes as you like this way
+    //        // NOTE: AddNodeToVessel calls maneuverPlan.AddNode()
+    //        Logger.LogInfo("AddManeuverNode: Using AddNodeToVessel method to create the node");
+    //        Game.SpaceSimulation.Maneuvers.AddNodeToVessel(nodeData);
+    //    }
+
+    //    // For KSP2, We want the to start burns early to make them centered on the node
+    //    double nodeTimeAdj = nodeData.BurnDuration * burnDurationOffsetFactor;
+
+    //    // Update the node to put a gizmo on it
+    //    StartCoroutine(UpdateNode(nodeData, nodeTimeAdj));
+
+    //    // Refresh the node list
+    //    RefreshManeuverNodes();
+
+    //    //var PatchedConicsList = activeVessel?.Orbiter?.ManeuverPlanSolver?.PatchedConicsList;
+    //    //var nextOrbit = PatchedConicsList[0];
+    //    //Logger.LogDebug($"AddManeuverNode: Next Orbit: {nextOrbit}");
+
+    //    // Logger.LogDebug("AddManeuverNode Done");
+    //}
 
     // If we call Game.SpaceSimulation.Maneuvers.AddNodeToVessel
     // we get KSP.SimManeuver.ManeuverProvider.AddNodeToVessel
@@ -663,78 +711,78 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     //    return flag;
     //}
 
-    private IEnumerator UpdateNode(ManeuverNodeData nodeData, double nodeTimeAdj)
-    {
-        Logger.LogDebug("UpdateNode");
+    //private IEnumerator UpdateNode(ManeuverNodeData nodeData, double nodeTimeAdj)
+    //{
+    //    Logger.LogDebug("UpdateNode");
 
-        if (nodeTimeAdj != 0)
-        {
-            var simObject = activeVessel?.SimulationObject;
-            ManeuverPlanComponent maneuverPlanComponent = simObject?.FindComponent<ManeuverPlanComponent>();
-            try { maneuverPlanComponent.UpdateTimeOnNode(nodeData, nodeData.Time += nodeTimeAdj); }
-            catch (Exception e) { Logger.LogError($"UpdateNode: Suppressed Exception: {e}"); }
-        }
+    //    if (nodeTimeAdj != 0)
+    //    {
+    //        var simObject = activeVessel?.SimulationObject;
+    //        ManeuverPlanComponent maneuverPlanComponent = simObject?.FindComponent<ManeuverPlanComponent>();
+    //        try { maneuverPlanComponent.UpdateTimeOnNode(nodeData, nodeData.Time += nodeTimeAdj); }
+    //        catch (Exception e) { Logger.LogError($"UpdateNode: Suppressed Exception: {e}"); }
+    //    }
 
-        // Note from Untoldwind (5/22/23): As for the ManeuverPlanSolver: As far as I was able to a gather the actual solver runs
-        // in a background thread using the "Unity.Jobs" system (i.e. outside the main game loop), so waiting for one-tick might
-        // not be sufficient to get a result. I suppose you have to wait for "IPatchedOrbit.ActivePatch" to become true.
+    //    // Note from Untoldwind (5/22/23): As for the ManeuverPlanSolver: As far as I was able to a gather the actual solver runs
+    //    // in a background thread using the "Unity.Jobs" system (i.e. outside the main game loop), so waiting for one-tick might
+    //    // not be sufficient to get a result. I suppose you have to wait for "IPatchedOrbit.ActivePatch" to become true.
 
-        while (!activeVessel.Orbit.ActivePatch)
-            yield return new WaitForSeconds(0.1f); // WaitForFixedUpdate();
+    //    while (!activeVessel.Orbit.ActivePatch)
+    //        yield return new WaitForSeconds(0.1f); // WaitForFixedUpdate();
 
-        bool mulligan = false;
+    //    bool mulligan = false;
 
-        // GameManager.Instance.Game.Map.TryGetMapCore(out MapCore mapCore);
-        Game.Map.TryGetMapCore(out MapCore mapCore);
+    //    // GameManager.Instance.Game.Map.TryGetMapCore(out MapCore mapCore);
+    //    Game.Map.TryGetMapCore(out MapCore mapCore);
 
-        // Manage the maneuver on the map
-        if (mapCore)
-        {
-            // This does it like it's done if the vessel just changed
-            // mapCore.map3D.ManeuverManager.RemoveAll(); // Called right before GetNodeDataForVessels in OnVesselChanged
-            // mapCore.map3D.ManeuverManager.GetNodeDataForVessels(); // calls GenerateGizmosForNodes, which calls CreateGizmoForLocation
+    //    // Manage the maneuver on the map
+    //    if (mapCore)
+    //    {
+    //        // This does it like it's done if the vessel just changed
+    //        // mapCore.map3D.ManeuverManager.RemoveAll(); // Called right before GetNodeDataForVessels in OnVesselChanged
+    //        // mapCore.map3D.ManeuverManager.GetNodeDataForVessels(); // calls GenerateGizmosForNodes, which calls CreateGizmoForLocation
 
-            // This trys to do it like it's done if the player created the node manually
-            // mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData);
+    //        // This trys to do it like it's done if the player created the node manually
+    //        // mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData);
 
-            // This is the Mulligan way with an extra yield return if we hit a snag
-            try { mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData); }
-            catch (Exception e)
-            {
-                Logger.LogDebug($"UpdateNode: Suppressed Exception: {e}");
-                Logger.LogDebug($"UpdateNode: Wating and Trying Again...");
-                mulligan = true;
-            }
-            if (mulligan)
-            {
-                yield return new WaitForSeconds(0.1f); // WaitForFixedUpdate();
-                mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData);
-                //mapCore.map3D.ManeuverManager.GetNodeDataForVessels();
-                //mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(nodeData.NodeID);
-            }
+    //        // This is the Mulligan way with an extra yield return if we hit a snag
+    //        try { mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData); }
+    //        catch (Exception e)
+    //        {
+    //            Logger.LogDebug($"UpdateNode: Suppressed Exception: {e}");
+    //            Logger.LogDebug($"UpdateNode: Wating and Trying Again...");
+    //            mulligan = true;
+    //        }
+    //        if (mulligan)
+    //        {
+    //            yield return new WaitForSeconds(0.1f); // WaitForFixedUpdate();
+    //            mapCore.map3D.ManeuverManager.CreateGizmoForLocation(nodeData);
+    //            //mapCore.map3D.ManeuverManager.GetNodeDataForVessels();
+    //            //mapCore.map3D.ManeuverManager.UpdatePositionForGizmo(nodeData.NodeID);
+    //        }
 
-            // Call sequence when the player creates a node maually in the GUI
-            //UnityEngine.EventSystems.EventSystem:Update()
-            //ModifiedInputModule: Process()
-            //ModifiedInputModule: ProcessMouseEvent()
-            //ModifiedInputModule: ProcessMouseEvent(Int32)
-            //ModifiedInputModule: ProcessMousePress(MouseButtonEventData, MouseButton)
-            //UnityEngine.EventSystems.ExecuteEvents:Execute(GameObject, BaseEventData, EventFunction1)
-            //UIAction_Void_Button: OnButtonLeftDown()
-            //KSP.Api.CoreTypes.DelegateAction:Invoke(Object[])
-            //KSP.Api.CoreTypes.DelegateAction:InternalInvoke(Boolean, Boolean, Object[])
-            //System.Delegate:DynamicInvoke(Object[])
-            //KSP.Map.Map3DManeuvers:OnAddManeuver()
-            //KSP.Map.Map3DManeuvers:CreateGizmoForLocation(ManeuverNodeData)
-            //KSP.Map.Map3DManeuvers:AcquireRawGizmoObject()
-            //KSP.Map.MapManeuverGizmo:Configure(Camera)
-            //KSP.Messages.MessageCenter:Publish(ManeuverCreatedMessage)
-            //KSP.Messages.MessageCenter:Publish(Type, MessageCenterMessage)
+    //        // Call sequence when the player creates a node maually in the GUI
+    //        //UnityEngine.EventSystems.EventSystem:Update()
+    //        //ModifiedInputModule: Process()
+    //        //ModifiedInputModule: ProcessMouseEvent()
+    //        //ModifiedInputModule: ProcessMouseEvent(Int32)
+    //        //ModifiedInputModule: ProcessMousePress(MouseButtonEventData, MouseButton)
+    //        //UnityEngine.EventSystems.ExecuteEvents:Execute(GameObject, BaseEventData, EventFunction1)
+    //        //UIAction_Void_Button: OnButtonLeftDown()
+    //        //KSP.Api.CoreTypes.DelegateAction:Invoke(Object[])
+    //        //KSP.Api.CoreTypes.DelegateAction:InternalInvoke(Boolean, Boolean, Object[])
+    //        //System.Delegate:DynamicInvoke(Object[])
+    //        //KSP.Map.Map3DManeuvers:OnAddManeuver()
+    //        //KSP.Map.Map3DManeuvers:CreateGizmoForLocation(ManeuverNodeData)
+    //        //KSP.Map.Map3DManeuvers:AcquireRawGizmoObject()
+    //        //KSP.Map.MapManeuverGizmo:Configure(Camera)
+    //        //KSP.Messages.MessageCenter:Publish(ManeuverCreatedMessage)
+    //        //KSP.Messages.MessageCenter:Publish(Type, MessageCenterMessage)
 
-        }
+    //    }
 
-        yield return new WaitForFixedUpdate();
-    }
+    //    yield return new WaitForFixedUpdate();
+    //}
 
     public bool AddNode(double burnUT = 0)
     {
