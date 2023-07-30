@@ -213,7 +213,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     private void OnGUI()
     {
         GUIenabled = false;
-        var gameState = Game.GlobalGameState.GetState();
+        var gameState = Game?.GlobalGameState?.GetState();
         if (gameState == GameState.Map3DView) GUIenabled = true;
         if (gameState == GameState.FlightView) GUIenabled = true;
         
@@ -296,13 +296,24 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             if (isError)
             {
                 Logger.LogError($"SpitNode: Node[{SelectedNodeIndex}]");
+                Logger.LogError($"NodeID:                   {node.NodeID}");
+                Logger.LogError($"NodeName:                 {node.NodeName}");
+                Logger.LogError($"Time:                     {node.Time} s");
+                Logger.LogError($"RelatedSimID:             {node.RelatedSimID}");
                 Logger.LogError($"BurnDuration:             {node.BurnDuration} s");
                 Logger.LogError($"BurnRequiredDV:           {node.BurnRequiredDV} m/s");
                 Logger.LogError($"BurnVector:               [{node.BurnVector.x}, {node.BurnVector.y}, {node.BurnVector.z}] = {node.BurnVector.magnitude} m/s");
                 Logger.LogError($"CachedManeuverPatchEndUT: {node.CachedManeuverPatchEndUT} s");
                 Logger.LogError($"IsOnManeuverTrajectory:   {node.IsOnManeuverTrajectory}");
-                Logger.LogError($"ManeuverTrajectoryPatch:  {node.ManeuverTrajectoryPatch}");
-                Logger.LogError($"NodeID:                   {node.NodeID}");
+                if (node.ManeuverTrajectoryPatch != null)
+                {
+                    Logger.LogError($"ManeuverTrajectoryPatch:  StartUT: {node.ManeuverTrajectoryPatch.StartUT}");
+                    Logger.LogError($"ManeuverTrajectoryPatch:  EndUT: {node.ManeuverTrajectoryPatch.EndUT}");
+                    Logger.LogError($"ManeuverTrajectoryPatch:  {node.ManeuverTrajectoryPatch}");
+                }
+                else
+                    Logger.LogError($"ManeuverTrajectoryPatch:  null");
+                Logger.LogError($"showOutOfFuelMessage:     {node.showOutOfFuelMessage}");
                 Logger.LogError($"NodeName:                 {node.NodeName}");
                 Logger.LogError($"RelatedSimID:             {node.RelatedSimID}");
                 Logger.LogError($"SimTransform:             {node.SimTransform}");
@@ -310,15 +321,24 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             else
             {
                 Logger.LogInfo($"SpitNode: Node[{SelectedNodeIndex}]");
+                Logger.LogInfo($"NodeID:                   {node.NodeID}");
+                Logger.LogInfo($"Time:                     {node.Time} s");
+                Logger.LogInfo($"NodeName:                 {node.NodeName}");
+                Logger.LogInfo($"RelatedSimID:             {node.RelatedSimID}");
                 Logger.LogInfo($"BurnDuration:             {node.BurnDuration} s");
                 Logger.LogInfo($"BurnRequiredDV:           {node.BurnRequiredDV} m/s");
                 Logger.LogInfo($"BurnVector:               [{node.BurnVector.x}, {node.BurnVector.y}, {node.BurnVector.z}] = {node.BurnVector.magnitude} m/s");
                 Logger.LogInfo($"CachedManeuverPatchEndUT: {node.CachedManeuverPatchEndUT} s");
                 Logger.LogInfo($"IsOnManeuverTrajectory:   {node.IsOnManeuverTrajectory}");
-                Logger.LogInfo($"ManeuverTrajectoryPatch:  {node.ManeuverTrajectoryPatch}");
-                Logger.LogInfo($"NodeID:                   {node.NodeID}");
-                Logger.LogInfo($"NodeName:                 {node.NodeName}");
-                Logger.LogInfo($"RelatedSimID:             {node.RelatedSimID}");
+                if (node.ManeuverTrajectoryPatch != null)
+                {
+                    Logger.LogInfo($"ManeuverTrajectoryPatch:  StartUT: {node.ManeuverTrajectoryPatch.StartUT}");
+                    Logger.LogInfo($"ManeuverTrajectoryPatch:  EndUT: {node.ManeuverTrajectoryPatch.EndUT}");
+                    Logger.LogInfo($"ManeuverTrajectoryPatch:  {node.ManeuverTrajectoryPatch}");
+                }
+                else
+                    Logger.LogInfo($"ManeuverTrajectoryPatch:  null");
+                Logger.LogInfo($"showOutOfFuelMessage:     {node.showOutOfFuelMessage}");
                 Logger.LogInfo($"SimTransform:             {node.SimTransform}");
             }
         }
@@ -510,21 +530,38 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
 
         IPatchedOrbit patch = null;
         bool isManeuver = false;
+        bool fixNodeList = false;
         // maneuverPlanSolver.FindPatchContainingUt(UT, maneuverPlanSolver.ManeuverTrajectory, out orbit, out int _);
         if (Nodes.Count > 0)
         {
             if (burnUT > Nodes[0].Time)
             {
-                Logger.LogDebug($"CreateManeuverNodeAtUT: burnUT = {burnUT} > Nodes[0].Time {Nodes[0].Time}");
+                Logger.LogInfo($"CreateManeuverNodeAtUT: burnUT = {burnUT} > Nodes[0].Time {Nodes[0].Time}");
                 isManeuver = true;
                 // Get the patch to put this node on
                 ManeuverPlanSolver maneuverPlanSolver = activeVessel.Orbiter?.ManeuverPlanSolver;
                 maneuverPlanSolver.FindPatchContainingUt(UT, maneuverPlanSolver.ManeuverTrajectory, out patch, out int _);
             }
+            else
+            {
+                fixNodeList = true;
+                Logger.LogInfo($"CreateManeuverNodeAtUT: burnUT = {burnUT} < Nodes[0].Time {Nodes[0].Time}");
+                for (int i = 0; i < Nodes.Count; i++)
+                {
+                    var thisNode = Nodes[i];
+                    if (thisNode.ManeuverTrajectoryPatch != null)
+                        Logger.LogInfo($"CreateManeuverNodeAtUT: Node {i}: IsOnManeuverTrajectory: {thisNode.IsOnManeuverTrajectory}, Time: {thisNode.Time}, ManeuverTrajectoryPatch.EndUT {thisNode.ManeuverTrajectoryPatch.EndUT}");
+                    else
+                        Logger.LogInfo($"CreateManeuverNodeAtUT: Node {i}: IsOnManeuverTrajectory: {thisNode.IsOnManeuverTrajectory}, Time: {thisNode.Time}, ManeuverTrajectoryPatch: null");
+                }
+            }
         }
         ManeuverNodeData maneuverNodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, isManeuver, burnUT);
         if (maneuverNodeData.IsOnManeuverTrajectory) // && patch != null)
             maneuverNodeData.SetManeuverState(patch as PatchedConicsOrbit);
+
+        var simObject = activeVessel?.SimulationObject;
+        ManeuverPlanComponent maneuverPlanComponent = simObject?.FindComponent<ManeuverPlanComponent>();
 
         maneuverNodeData.BurnVector = burnVector;
         if (!Game.SpaceSimulation.Maneuvers.AddNodeToVessel(maneuverNodeData))
@@ -560,16 +597,39 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             }
             else
             {
-                var simObject = activeVessel?.SimulationObject;
-                ManeuverPlanComponent maneuverPlanComponent = simObject?.FindComponent<ManeuverPlanComponent>();
+
                 try { maneuverPlanComponent.UpdateTimeOnNode(maneuverNodeData, maneuverNodeData.Time += nodeTimeAdj); }
                 catch (Exception e) { Logger.LogError($"UpdateNode: Suppressed Exception: {e}"); }
+            }
+        }
+
+        if (fixNodeList)
+        {
+            mapCore.map3D.ManeuverManager.GetNodeDataForVessels();
+            for (int i = 0; i < Nodes.Count; i++)
+            {
+                var thisNode = Nodes[i];
+                if (thisNode.ManeuverTrajectoryPatch != null)
+                    Logger.LogInfo($"CreateManeuverNodeAtUT: Node {i}: IsOnManeuverTrajectory: {thisNode.IsOnManeuverTrajectory}, Time: {thisNode.Time}, ManeuverTrajectoryPatch.EndUT {thisNode.ManeuverTrajectoryPatch.EndUT}");
+                else
+                    Logger.LogInfo($"CreateManeuverNodeAtUT: Node {i}: IsOnManeuverTrajectory: {thisNode.IsOnManeuverTrajectory}, Time: {thisNode.Time}, ManeuverTrajectoryPatch: null");
             }
         }
 
         // Refresh the node list
         RefreshManeuverNodes();
 
+        if (fixNodeList)
+        {
+            for (int i = 0; i < Nodes.Count; i++)
+            {
+                var thisNode = Nodes[i];
+                if (thisNode.ManeuverTrajectoryPatch != null)
+                    Logger.LogInfo($"CreateManeuverNodeAtUT: Node {i}: IsOnManeuverTrajectory: {thisNode.IsOnManeuverTrajectory}, Time: {thisNode.Time}, ManeuverTrajectoryPatch.EndUT {thisNode.ManeuverTrajectoryPatch.EndUT}");
+                else
+                    Logger.LogInfo($"CreateManeuverNodeAtUT: Node {i}: IsOnManeuverTrajectory: {thisNode.IsOnManeuverTrajectory}, Time: {thisNode.Time}, ManeuverTrajectoryPatch: null");
+            }
+        }
         return true;
 
         //IPatchedOrbit orbit = null;
