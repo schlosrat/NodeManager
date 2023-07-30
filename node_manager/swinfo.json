@@ -1,14 +1,15 @@
 {
-  "mod_id": "node_manager",
+  "mod_id": "com.github.schlosrat.node_manager",
   "author": "Schlosrat",
   "name": "Node Manager",
   "description": "Provides services for other mods needing to create, delete, and manage maneuver nodes",
   "source": "https://github.com/schlosrat/NodeManager",
   "version": "0.5.9",
+  "spec": "1.3",
   "version_check": "https://raw.githubusercontent.com/schlosrat/NodeManager/master/node_manager/swinfo.json",
   "dependencies": [
     {
-      "id": "SpaceWarp",
+      "id": "com.github.x606.spacewarp",
       "version": {
         "min": "1.1.1",
         "max": "*"
