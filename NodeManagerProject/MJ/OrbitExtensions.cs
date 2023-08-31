@@ -266,7 +266,7 @@ namespace MuMech
 
             // hack up a dynamic default value to the current time
             if (UT == double.NegativeInfinity)
-                UT = Game.UniverseModel.UniversalTime;
+                UT = Game.UniverseModel.UniverseTime;
 
             PatchedConicsOrbit newOrbit = new PatchedConicsOrbit(Game.UniverseModel);
             o.GetOrbitalStateVectorsAtUT(UT, out pos, out vel);
@@ -289,7 +289,7 @@ namespace MuMech
 
             // hack up a dynamic default value to the current time
             if (UT == double.NegativeInfinity)
-                UT = Game.UniverseModel.UniversalTime;
+                UT = Game.UniverseModel.UniverseTime;
 
             o.StartUT = UT;
             o.EndUT   = o.eccentricity >= 1.0 ? o.period : UT + o.period;
@@ -304,7 +304,7 @@ namespace MuMech
         // This does not allocate a new orbit object and the caller should call new PatchedConicsOrbit if/when required
         public static void MutatedOrbit(this PatchedConicsOrbit o, double periodOffset = double.NegativeInfinity)
         {
-            double UT = Game.UniverseModel.UniversalTime;
+            double UT = Game.UniverseModel.UniverseTime;
 
             if (periodOffset.IsFinite())
             {
@@ -835,7 +835,7 @@ namespace MuMech
             if (vessel.mainBody == null) return 0;
             if (orbit.PeriapsisArl > 0) return double.PositiveInfinity;
 
-            double UT = Game.UniverseModel.UniversalTime;
+            double UT = Game.UniverseModel.UniverseTime;
             double angleFromHorizontal = 90 - Vector3d.Angle(-vessel.SurfaceVelocity.vector, vessel.Orbit.Up(UT));
             angleFromHorizontal = MuUtils.Clamp(angleFromHorizontal, 0, 90);
             double sine = Math.Sin(angleFromHorizontal * UtilMath.Deg2Rad);

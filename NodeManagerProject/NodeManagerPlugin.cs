@@ -405,8 +405,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         RefreshManeuverNodes();
         List<ManeuverNodeData> nodesToDelete = new List<ManeuverNodeData>();
         ManeuverNodeData nodeToDelete;
-        // double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
-        double UT = Game.UniverseModel.UniversalTime;
+        // double UT = GameManager.Instance.Game.UniverseModel.UniverseTime;
+        double UT = Game.UniverseModel.UniverseTime;
 
         // This should never happen, but better be safe
         if (SelectedNodeIndex + 1 > Nodes.Count)
@@ -426,8 +426,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         RefreshManeuverNodes();
         List<ManeuverNodeData> nodesToDelete = new List<ManeuverNodeData>();
         ManeuverNodeData nodeToDelete;
-        // double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
-        double UT = Game.UniverseModel.UniversalTime;
+        // double UT = GameManager.Instance.Game.UniverseModel.UniverseTime;
+        double UT = Game.UniverseModel.UniverseTime;
 
         foreach (ManeuverNodeData node in Nodes)
         {
@@ -517,8 +517,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             Logger.LogWarning($"CreateManeuverNodeAtUT: Max Nodes Limit ({maxNodes}) reached. Unable to proceed.");
             return false;
         }
-        // var UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
-        double UT = Game.UniverseModel.UniversalTime;
+        // var UT = GameManager.Instance.Game.UniverseModel.UniverseTime;
+        double UT = Game.UniverseModel.UniverseTime;
 
         if (burnUT < UT + 1) // Don't set node to now or in the past
             burnUT = UT + 1;
@@ -981,8 +981,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         RefreshActiveVesselAndCurrentManeuver();
 
         // Define empty node data
-        // double UT = GameManager.Instance.Game.UniverseModel.UniversalTime;
-        double UT = Game.UniverseModel.UniversalTime;
+        // double UT = GameManager.Instance.Game.UniverseModel.UniverseTime;
+        double UT = Game.UniverseModel.UniverseTime;
         if (burnUT < UT)
         {
             if (activeVessel.Orbit.eccentricity < 1 && Nodes.Count == 0)
