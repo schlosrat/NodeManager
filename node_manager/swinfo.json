@@ -4,20 +4,20 @@
   "name": "Node Manager",
   "description": "Provides services for other mods needing to create, delete, and manage maneuver nodes",
   "source": "https://github.com/schlosrat/NodeManager",
-  "version": "0.7.0",
-  "spec": "1.3",
+  "version": "0.7.1",
+  "spec": "2.0",
   "version_check": "https://raw.githubusercontent.com/schlosrat/NodeManager/master/node_manager/swinfo.json",
   "dependencies": [
     {
       "id": "com.github.x606.spacewarp",
       "version": {
-        "min": "1.5.2",
+        "min": "1.7.0",
         "max": "*"
       }
     }
   ],
   "ksp2_version": {
-    "min": "0.1.5",
+    "min": "0.2.0",
     "max": "*"
   }
 }
