@@ -13,22 +13,23 @@ using SpaceWarp.API.Mods;
 using SpaceWarp.API.UI;
 using UnityEngine;
 using System.Collections;
+using JetBrains.Annotations;
 
 /* This mod is primarily meant as a service provider to other mods, which can call functions in this one
  * without needing to recreate all these functios in the base mod. To use this mod in your mod you will
  * need to do the following:
- * 
+ *
  * Add the node_manager.dll to your mods list of Assemblies. Generally, put the dll in the same folder
  * you hace Assembly-CSharp.dll in and add it to your csproj file the same way. Your mod will need to
- * have access to it this way during compile time. At run time your mod will be accessing the 
+ * have access to it this way during compile time. At run time your mod will be accessing the
  * node_manager.dll from the plugins folder where Node Manager is installed.
- * 
+ *
  * Bring in the NodeManger namespace
- * 
+ *
  *     using NodeManager;
- * 
+ *
  * Check to make sure Node Manager is loaded somewhere before you use it (e.g., OnInitialized())
- * 
+ *
     if (Chainloader.PluginInfos.TryGetValue(NodeManagerPlugin.ModGuid, var out NM))
     {
         NMLoaded = true;
@@ -36,10 +37,10 @@ using System.Collections;
         Logger.LogInfo($"MNC = {NM}");
     }
     else NMLoaded = false;
- * 
+ *
  * Create a reflection caller for each of the functions in this mod that you would like to call
  * similar to this example
- * 
+ *
     private void CreateNodeAtUt(Vector3d burnVector, double UT, double burnDurationOffsetFactor = -0.5)
     {
         if (NMLoaded)
@@ -56,7 +57,7 @@ using System.Collections;
     }
  *
  * Call your reflection method wherever you need to invoke the corresponding Node Manager method
- * 
+ *
  * Profit!
  */
 
@@ -67,9 +68,9 @@ namespace NodeManager;
 public class NodeManagerPlugin : BaseSpaceWarpPlugin
 {
     // These are useful in case some other mod wants to add a dependency to this one
-    public const string ModGuid = MyPluginInfo.PLUGIN_GUID;
-    public const string ModName = MyPluginInfo.PLUGIN_NAME;
-    public const string ModVer = MyPluginInfo.PLUGIN_VERSION;
+    [PublicAPI] public const string ModGuid = MyPluginInfo.PLUGIN_GUID;
+    [PublicAPI] public const string ModName = MyPluginInfo.PLUGIN_NAME;
+    [PublicAPI] public const string ModVer = MyPluginInfo.PLUGIN_VERSION;
 
     public static NodeManagerPlugin Instance { get; set; }
 
@@ -216,7 +217,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         var gameState = Game?.GlobalGameState?.GetState();
         if (gameState == GameState.Map3DView) GUIenabled = true;
         if (gameState == GameState.FlightView) GUIenabled = true;
-        
+
         // Set the UI
         GUI.skin = Skins.ConsoleSkin;
         RefreshActiveVesselAndCurrentManeuver();
@@ -580,6 +581,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             }
         }
         ManeuverNodeData maneuverNodeData = new ManeuverNodeData(activeVessel.SimulationObject.GlobalId, isManeuver, burnUT);
+        maneuverNodeData.InitializeTransform();
+
         if (maneuverNodeData.IsOnManeuverTrajectory) // && patch != null)
             maneuverNodeData.SetManeuverState(patch as PatchedConicsOrbit);
 

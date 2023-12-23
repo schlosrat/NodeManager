@@ -16,6 +16,8 @@
 # Mono auto generated files
 mono_crash.*
 
+.idea
+
 # KSP dlls
 external_dlls/
 
