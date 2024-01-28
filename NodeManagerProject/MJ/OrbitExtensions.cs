@@ -43,7 +43,7 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d WorldOrbitalVelocityAtUT(this PatchedConicsOrbit o, double UT) // KS2: OrbitalVelocity // was: SwappedOrbitalVelocityAtUT
         {
-            // return o.getOrbitalVelocityAtUT(UT).xzy
+            // return o.GetOrbitalVelocityAtUTZup(UT).SwapYAndZ;
             return o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetOrbitalVelocityAtUTZup(UT).SwapYAndZ); // from KS2
         }
 
@@ -57,7 +57,7 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d WorldBCIPositionAtUT(this PatchedConicsOrbit o, double UT) // KS2: RelativePosition // was: SwappedRelativePositionAtUT
         {
-            // return o.getRelativePositionAtUT(UT).xzy
+            // return o.GetRelativePositionAtUT(UT).SwapYAndZ;
             return o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetRelativePositionAtUTZup(UT).SwapYAndZ); // From KS2
         }
 
@@ -764,7 +764,8 @@ namespace MuMech
 
             transfer = 180 - ((time / targetOrbit.period) * 360);
             while (transfer < -180) { transfer += 360; }
-            return Math.Round(transfer, 1);
+            return MuUtils.ClampDegrees360(transfer);
+            // return Math.Round(transfer, 1);
         }
 
         //Computes the angle between two orbital planes. This will be a number between 0 and 180
