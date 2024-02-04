@@ -81,7 +81,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     private readonly int windowWidth = 320;
     private readonly int windowHeight = 320;
 
-    private const string ToolbarFlightButtonID = "BTN-NodeManagerFlight";
+    // private const string ToolbarFlightButtonID = "BTN-NodeManagerFlight";
     // private const string ToolbarOABButtonID = "BTN-NodeManagerOAB";
 
     private Rect closeBtnRect;
@@ -92,6 +92,8 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     public List<ManeuverNodeData> Nodes = new();
     private int maxNodes = 9; // This seems to be a hard limit on KSP2's capacity for nodes. Even making them manually
                               // in the game you will get NREs if you try to make a 10th one.
+
+    public static GameStateConfiguration _GameState;
 
     // private static ManualLogSource Logger = BepInEx.Logging.Logger.CreateLogSource("ManeuverNodeController.Utility");
     //public ManualLogSource logger;
@@ -122,6 +124,19 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         {
             MessageCenterMessage message = (ManeuverCreatedMessage)msg;
             OnManeuverCreatedMessage(message);
+        });
+
+        //Game.Messages.Subscribe<GameStateLeftMessage>(msg =>
+        //{
+        //    MessageCenterMessage message = (GameStateLeftMessage)msg;
+        //    OnGameStateLeftMessage(message);
+        //});
+
+        // GameManager.Instance.Game.Messages.Subscribe<ManeuverCreatedMessage>(msg =>
+        Game.Messages.Subscribe<GameStateEnteredMessage>(msg =>
+        {
+            MessageCenterMessage message = (GameStateEnteredMessage)msg;
+            OnGameStateEnteredMessage(message);
         });
 
         Logger.LogInfo("Loaded");
@@ -158,25 +173,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
 
         // Register all Harmony patches in the project
         Harmony.CreateAndPatchAll(typeof(NodeManagerPlugin).Assembly);
-
-        //// Try to get the currently active vessel, set its throttle to 100% and toggle on the landing gear
-        //try
-        //{
-        //    var currentVessel = Vehicle.ActiveVesselVehicle;
-        //    if (currentVessel != null)
-        //    {
-        //        currentVessel.SetMainThrottle(1.0f);
-        //        currentVessel.SetGearState(true);
-        //    }
-        //}
-        //catch (Exception e) {}
-
-        //// Fetch a configuration value or create a default one if it does not exist
-        //var defaultValue = "my_value";
-        //var configValue = Config.Bind<string>("Settings section", "Option 1", defaultValue, "Option description");
-
-        //// Log the config value into <KSP2 Root>/BepInEx/LogOutput.log
-        //Logger.LogInfo($"Option 1: {configValue.Value}");
     }
 
     private void OnManeuverRemovedMessage(MessageCenterMessage message)
@@ -189,6 +185,29 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
     {
         // Update the lsit of nodes to capture the effect of the node deletion
         RefreshManeuverNodes();
+    }
+
+    private void OnGameStateLeftMessage(MessageCenterMessage message)
+    {
+        // Update the lsit of nodes in case they've changed as a result of leaving a game state
+        _GameState = GameManager.Instance?.Game?.GlobalGameState?.GetGameState();
+        // Logger.LogInfo($"NodeManager: OnGameStateLeftMessage {_GameState.GameState}");
+        if (_GameState.GameState == GameState.MainMenu)
+            Nodes = new();
+        else
+            RefreshManeuverNodes();
+    }
+
+    private void OnGameStateEnteredMessage(MessageCenterMessage message)
+    {
+        // Update the lsit of nodes in case they've changed as a result of entering a game state
+        _GameState = GameManager.Instance?.Game?.GlobalGameState?.GetGameState();
+        // Logger.LogInfo($"NodeManager: OnGameStateEnteredMessage {_GameState.GameState}");
+        RefreshManeuverNodes();
+        if (_GameState.GameState == GameState.MainMenu)
+            Nodes = new();
+        else
+            RefreshManeuverNodes();
     }
 
     //void Awake()
