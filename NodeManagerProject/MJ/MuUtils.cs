@@ -169,42 +169,36 @@ namespace MuMech
         // The MJ version of OrbitFromStateVectors peroforms a SwapYZ on (pos - body Position), and a SwapYZ on vel before passing them into
         // the KSP1 version of UpdateFromStateVectors.
         // ret.UpdateFromStateVectors(OrbitExtensions.SwapYZ(pos - body.Position), OrbitExtensions.SwapYZ(vel), body, UT);
-        public static PatchedConicsOrbit OrbitFromStateVectors(Vector3d pos, Vector3d vel, ICoordinateSystem coordinateSystem, CelestialBodyComponent body, double UT)
+public static PatchedConicsOrbit OrbitFromStateVectors(Vector3d pos, Vector3d vel, ICoordinateSystem coordinateSystem, CelestialBodyComponent body, double UT)
+{
+    PatchedConicsOrbit ret = new PatchedConicsOrbit(Game.UniverseModel);
+    // Create the type Position and Velocty inputs needed for KSP2's UpdateFromStateVectors
+    Position position = new(body.SimulationObject.transform.celestialFrame, (pos - body.Position.localPosition).SwapYAndZ); // OrbitExtensions.SwapYZ(pos - body.Position.localPosition)
+    Velocity velocity = new(body.SimulationObject.transform.celestialFrame.motionFrame, vel.SwapYAndZ); // OrbitExtensions.SwapYZ(vel)
+
+    ret.UpdateFromStateVectors(position, velocity, body, UT);
+    if (double.IsNaN(ret.argumentOfPeriapsis))
+    {
+        Vector3d vectorToAN = Quaternion.AngleAxis(-(float)ret.longitudeOfAscendingNode, body.Orbit.ReferenceFrame.up.vector) * body.Orbit.ReferenceFrame.right.vector;
+        Vector3d vectorToPe = ret.eccVec.SwapYAndZ; //  OrbitExtensions.SwapYZ(ret.eccVec);
+        double cosArgumentOfPeriapsis = Vector3d.Dot(vectorToAN, vectorToPe) / (vectorToAN.magnitude * vectorToPe.magnitude);
+        //Squad's UpdateFromStateVectors is missing these checks, which are needed due to finite precision arithmetic:
+        if (cosArgumentOfPeriapsis > 1)
         {
-            PatchedConicsOrbit ret = new PatchedConicsOrbit(Game.UniverseModel);
-            // Create the type Position and Velocty inputs needed for KSP2's UpdateFromStateVectors
-            Position position = new(body.SimulationObject.transform.celestialFrame, (pos - body.Position.localPosition).SwapYAndZ); // OrbitExtensions.SwapYZ(pos - body.Position.localPosition)
-            Velocity velocity = new(body.SimulationObject.transform.celestialFrame.motionFrame, vel.SwapYAndZ); // OrbitExtensions.SwapYZ(vel)
-
-            // Position Position = new(body.SimulationObject.transform.celestialFrame, pos);
-            // Velocity velocity = new(body.SimulationObject.transform.celestialFrame.motionFrame, vel);
-
-            // ret.UpdateFromStateVectors(OrbitExtensions.SwapYZ(pos - body.Position), OrbitExtensions.SwapYZ(vel), body, UT);
-            // orbit.UpdateFromStateVectors(new Position(o.ReferenceBody.SimulationObject.transform.celestialFrame, Position), new Velocity(o.ReferenceBody.SimulationObject.transform.celestialFrame.motionFrame, velocity), o.ReferenceBody, UT);
-
-            ret.UpdateFromStateVectors(position, velocity, body, UT);
-            if (double.IsNaN(ret.argumentOfPeriapsis))
-            {
-                Vector3d vectorToAN = Quaternion.AngleAxis(-(float)ret.longitudeOfAscendingNode, body.Orbit.ReferenceFrame.up.vector) * body.Orbit.ReferenceFrame.right.vector;
-                Vector3d vectorToPe = ret.eccVec.SwapYAndZ; //  OrbitExtensions.SwapYZ(ret.eccVec);
-                double cosArgumentOfPeriapsis = Vector3d.Dot(vectorToAN, vectorToPe) / (vectorToAN.magnitude * vectorToPe.magnitude);
-                //Squad's UpdateFromStateVectors is missing these checks, which are needed due to finite precision arithmetic:
-                if (cosArgumentOfPeriapsis > 1)
-                {
-                    ret.argumentOfPeriapsis = 0;
-                }
-                else if (cosArgumentOfPeriapsis < -1)
-                {
-                    ret.argumentOfPeriapsis = 180;
-                }
-                else
-                {
-                    ret.argumentOfPeriapsis = Math.Acos(cosArgumentOfPeriapsis);
-                }
-            }
-
-            return ret;
+            ret.argumentOfPeriapsis = 0;
         }
+        else if (cosArgumentOfPeriapsis < -1)
+        {
+            ret.argumentOfPeriapsis = 180;
+        }
+        else
+        {
+            ret.argumentOfPeriapsis = Math.Acos(cosArgumentOfPeriapsis);
+        }
+    }
+
+    return ret;
+}
 
         //public static bool PhysicsRunning()
         //{
