@@ -1,22 +1,23 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.5.33516.290
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NodeManager", "NodeManagerProject\NodeManager.csproj", "{EB660362-3B84-4CCA-9796-3F880083324F}"
+Project("{96AEEA67-4AD0-495D-951B-61211771C7A6}") = "NodeManager", "src/NodeManager/NodeManager.csproj", "{CF0C475C-7541-485E-9A64-3644EC6DED53}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
+		Deploy|Any CPU = Deploy|Any CPU
+		DeployAndRun|Any CPU = DeployAndRun|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{EB660362-3B84-4CCA-9796-3F880083324F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EB660362-3B84-4CCA-9796-3F880083324F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EB660362-3B84-4CCA-9796-3F880083324F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EB660362-3B84-4CCA-9796-3F880083324F}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
+		{CF0C475C-7541-485E-9A64-3644EC6DED53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF0C475C-7541-485E-9A64-3644EC6DED53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF0C475C-7541-485E-9A64-3644EC6DED53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF0C475C-7541-485E-9A64-3644EC6DED53}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF0C475C-7541-485E-9A64-3644EC6DED53}.Deploy|Any CPU.ActiveCfg = Deploy|Any CPU
+		{CF0C475C-7541-485E-9A64-3644EC6DED53}.Deploy|Any CPU.Build.0 = Deploy|Any CPU
+		{CF0C475C-7541-485E-9A64-3644EC6DED53}.DeployAndRun|Any CPU.ActiveCfg = DeployAndRun|Any CPU
+		{CF0C475C-7541-485E-9A64-3644EC6DED53}.DeployAndRun|Any CPU.Build.0 = DeployAndRun|Any CPU
 	EndGlobalSection
 EndGlobal
+
