@@ -8,7 +8,7 @@
 		<AssemblyName>com.github.schlosrat.node_manager</AssemblyName>
 		<Product>Node Manager</Product>
 		<Description>Provides services for other mods needing to create, delete, and manage maneuver nodes</Description>
-		<Version Label="Version of the mod">0.7.2</Version>
+		<Version Label="Version of the mod">0.7.3</Version>
 		<RestoreAdditionalProjectSources>
 			https://nuget.spacewarp.org/v3/index.json
 		</RestoreAdditionalProjectSources>
