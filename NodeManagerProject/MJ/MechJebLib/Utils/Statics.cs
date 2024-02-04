@@ -54,7 +54,7 @@ namespace MechJebLib.Utils
         /// <param name="min">Min value</param>
         /// <param name="max">Max value</param>
         /// <returns>Clamped value</returns>
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Clamp(double x, double min, double max)
         {
             return x < min ? min : x > max ? max : x;
@@ -67,7 +67,7 @@ namespace MechJebLib.Utils
         /// <param name="min">Min value</param>
         /// <param name="max">Max value</param>
         /// <returns>Clamped value</returns>
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Clamp(int x, int min, int max)
         {
             return x < min ? min : x > max ? max : x;
@@ -78,7 +78,7 @@ namespace MechJebLib.Utils
         /// </summary>
         /// <param name="x">Value to clamp</param>
         /// <returns>Clamped value</returns>
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Clamp01(double x)
         {
             return Clamp(x, 0, 1);
@@ -89,7 +89,7 @@ namespace MechJebLib.Utils
         /// </summary>
         /// <param name="deg">degrees</param>
         /// <returns>radians</returns>
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Deg2Rad(double deg)
         {
             return deg * UtilMath.Deg2Rad;
@@ -100,7 +100,7 @@ namespace MechJebLib.Utils
         /// </summary>
         /// <param name="rad">Radians</param>
         /// <returns>Degrees</returns>
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Rad2Deg(double rad)
         {
             return rad * UtilMath.Rad2Deg;
@@ -111,7 +111,7 @@ namespace MechJebLib.Utils
         /// </summary>
         /// <param name="x">Cosine value</param>
         /// <returns>Radians</returns>
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double SafeAcos(double x)
         {
             return Math.Acos(Clamp(x, -1.0, 1.0));
@@ -122,7 +122,7 @@ namespace MechJebLib.Utils
         /// </summary>
         /// <param name="x">Sine value</param>
         /// <returns>Radians</returns>
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double SafeAsin(double x)
         {
             return Math.Asin(Clamp(x, -1.0, 1.0));
@@ -134,7 +134,7 @@ namespace MechJebLib.Utils
         /// <param name="x"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Atanh(double x)
         {
             if (Math.Abs(x) > 1)
@@ -149,7 +149,7 @@ namespace MechJebLib.Utils
         /// <param name="x"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Acosh(double x)
         {
             if (x < 1)
@@ -163,7 +163,7 @@ namespace MechJebLib.Utils
         /// </summary>
         /// <param name="x"></param>
         /// <returns></returns>
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Asinh(double x)
         {
             return Math.Log(x + Math.Sqrt(x * x + 1));
@@ -209,7 +209,7 @@ namespace MechJebLib.Utils
         /// </summary>
         /// <param name="x">Radians</param>
         /// <returns>Radians</returns>
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Clamp2Pi(double x)
         {
             x %= TAU;
