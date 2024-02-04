@@ -25,10 +25,9 @@
         <NoWarn>$(NoWarn);CS0436</NoWarn>
     </PropertyGroup>
 
-    <PropertyGroup Label="Package source configuration">
-        <RestoreAdditionalProjectSources>
-            https://nuget.spacewarp.org/v3/index.json
-        </RestoreAdditionalProjectSources>
+    <PropertyGroup Label="Node Manager-specific configuration">
+        <PluginFolderName>node_manager</PluginFolderName>
+        <PluginAssemblyFileName>node_manager</PluginAssemblyFileName>
     </PropertyGroup>
 
     <ItemGroup Label="Dependencies for build targets">
