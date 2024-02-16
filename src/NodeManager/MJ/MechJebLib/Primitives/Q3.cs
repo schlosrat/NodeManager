@@ -1,14 +1,12 @@
 /*
- * Copyright Lamont Granquist (lamont@scriptkiddie.org)
- * Dual licensed under the MIT (MIT-LICENSE) license
- * and GPLv2 (GPLv2-LICENSE) license or any later version.
+ * Copyright Lamont Granquist, Sebastien Gaggini and the MechJeb contributors
+ * SPDX-License-Identifier: LicenseRef-PD-hp OR Unlicense OR CC0-1.0 OR 0BSD OR MIT-0 OR MIT OR LGPL-2.1+
  */
 
 using System;
 using System.Globalization;
 using static MechJebLib.Utils.Statics;
-
-#nullable enable
+using static System.Math;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
@@ -80,15 +78,13 @@ namespace MechJebLib.Primitives
         public static Q3 identity { get; } = new Q3(0.0, 0.0, 0.0, 1.0);
 
         // Combines rotations /lhs/ and /rhs/.
-        public static Q3 operator *(Q3 q1, Q3 q2)
-        {
-            return new Q3(
+        public static Q3 operator *(Q3 q1, Q3 q2) =>
+            new Q3(
                 q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y,
                 q1.w * q2.y - q1.x * q2.z + q1.y * q2.w + q1.z * q2.x,
                 q1.w * q2.z + q1.x * q2.y - q1.y * q2.x + q1.z * q2.w,
                 q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z
             );
-        }
 
         // Rotates the point /point/ with /rotation/.
         public static V3 operator *(Q3 q, V3 v)
@@ -115,30 +111,20 @@ namespace MechJebLib.Primitives
         }
 
         // Is the dot product of two quaternions within tolerance for them to be considered equal?
-        private static bool IsEqualUsingDot(double dot)
-        {
+        private static bool IsEqualUsingDot(double dot) =>
             // Returns false in the presence of NaN values.
-            return dot > 1.0 - KEPS;
-        }
+            dot > 1.0 - KEPS;
 
         // Are two quaternions equal to each other?
-        public static bool operator ==(Q3 lhs, Q3 rhs)
-        {
-            return IsEqualUsingDot(Dot(lhs, rhs));
-        }
+        public static bool operator ==(Q3 lhs, Q3 rhs) => IsEqualUsingDot(Dot(lhs, rhs));
 
         // Are two quaternions different from each other?
-        public static bool operator !=(Q3 lhs, Q3 rhs)
-        {
+        public static bool operator !=(Q3 lhs, Q3 rhs) =>
             // Returns true in the presence of NaN values.
-            return !(lhs == rhs);
-        }
+            !(lhs == rhs);
 
         // The dot product between two rotations.
-        public static double Dot(Q3 a, Q3 b)
-        {
-            return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-        }
+        public static double Dot(Q3 a, Q3 b) => a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 
         /*
         public void SetLookRotation(V3 view)
@@ -160,7 +146,7 @@ namespace MechJebLib.Primitives
         public static double Angle(Q3 a, Q3 b)
         {
             double dot = Dot(a, b);
-            return IsEqualUsingDot(dot) ? 0.0f : Math.Acos(Math.Min(Math.Abs(dot), 1.0)) * 2.0;
+            return IsEqualUsingDot(dot) ? 0.0f : Acos(Min(Abs(dot), 1.0)) * 2.0;
         }
 
         // FIXME: kill degrees with fire, fix euler angles
@@ -196,7 +182,7 @@ namespace MechJebLib.Primitives
             // roll (x-axis rotation)
             double sinr_cosp = 2 * (q.w * q.x + q.y * q.z);
             double cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y);
-            angles.x = Math.Atan2(sinr_cosp, cosr_cosp);
+            angles.x = Atan2(sinr_cosp, cosr_cosp);
 
             // negative pitch (y-axis rotation)
             double sinp = 2 * (q.w * q.y - q.z * q.x);
@@ -205,7 +191,7 @@ namespace MechJebLib.Primitives
             // negative yaw (z-axis rotation)
             double siny_cosp = 2 * (q.w * q.z + q.x * q.y);
             double cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
-            angles.z = Math.Atan2(siny_cosp, cosy_cosp);
+            angles.z = Atan2(siny_cosp, cosy_cosp);
 
             return angles;
         }
@@ -222,7 +208,7 @@ namespace MechJebLib.Primitives
         {
             double angle = Q3.Angle(from, to);
             if (angle == 0.0f) return to;
-            return SlerpUnclamped(from, to, Math.Min(1.0f, maxDegreesDelta / angle));
+            return SlerpUnclamped(from, to, Min(1.0f, maxDegreesDelta / angle));
         }
         */
 
@@ -250,7 +236,7 @@ namespace MechJebLib.Primitives
             var q = new Q3();
             if (trace > 0f)
             {
-                double num = Math.Sqrt(trace + 1);
+                double num = Sqrt(trace + 1);
                 q.w = num * 0.5;
                 num = 0.5 / num;
                 q.x = (m12 - m21) * num;
@@ -261,7 +247,7 @@ namespace MechJebLib.Primitives
 
             if (m00 >= m11 && m00 >= m22)
             {
-                double num7 = Math.Sqrt(1 + m00 - m11 - m22);
+                double num7 = Sqrt(1 + m00 - m11 - m22);
                 double num4 = 0.5 / num7;
                 q.x = 0.5 * num7;
                 q.y = (m01 + m10) * num4;
@@ -272,7 +258,7 @@ namespace MechJebLib.Primitives
 
             if (m11 > m22)
             {
-                double num6 = Math.Sqrt(1 + m11 - m00 - m22);
+                double num6 = Sqrt(1 + m11 - m00 - m22);
                 double num3 = 0.5 / num6;
                 q.x = (m10 + m01) * num3;
                 q.y = 0.5 * num6;
@@ -281,7 +267,7 @@ namespace MechJebLib.Primitives
                 return q;
             }
 
-            double num5 = Math.Sqrt(1 + m22 - m00 - m11);
+            double num5 = Sqrt(1 + m22 - m00 - m11);
             double num2 = 0.5 / num5;
             q.x = (m20 + m02) * num2;
             q.y = (m21 + m12) * num2;
@@ -290,14 +276,21 @@ namespace MechJebLib.Primitives
             return q;
         }
 
+        public static Q3 FromToRotation(V3 from, V3 to)
+        {
+            var c = V3.Cross(from, to);
+            double w = Sqrt(from.sqrMagnitude * to.sqrMagnitude) + V3.Dot(from, to);
+            return Normalize(new Q3(c.x, c.y, c.z, w));
+        }
+
         public static Q3 AngleAxis(double angle, V3 axis)
         {
             var q = new Q3();
             V3 a = axis.normalized;
-            q.x = a.x * Math.Sin(angle / 2.0);
-            q.y = a.y * Math.Sin(angle / 2.0);
-            q.z = a.z * Math.Sin(angle / 2.0);
-            q.w = Math.Cos(angle / 2.0);
+            q.x = a.x * Sin(angle / 2.0);
+            q.y = a.y * Sin(angle / 2.0);
+            q.z = a.z * Sin(angle / 2.0);
+            q.w = Cos(angle / 2.0);
             return q;
         }
 
@@ -311,27 +304,18 @@ namespace MechJebLib.Primitives
         // FIXME: precision
         public static Q3 Normalize(Q3 q)
         {
-            double mag = Math.Sqrt(Dot(q, q));
+            double mag = Sqrt(Dot(q, q));
 
             return mag < EPS ? identity : new Q3(q.x / mag, q.y / mag, q.z / mag, q.w / mag);
         }
 
-        public void Normalize()
-        {
-            this = Normalize(this);
-        }
+        public void Normalize() => this = Normalize(this);
 
         public Q3 normalized => Normalize(this);
 
-        public override string ToString()
-        {
-            return ToString(null, CultureInfo.InvariantCulture.NumberFormat);
-        }
+        public override string ToString() => ToString(null, CultureInfo.InvariantCulture.NumberFormat);
 
-        public string ToString(string format)
-        {
-            return ToString(format, CultureInfo.InvariantCulture.NumberFormat);
-        }
+        public string ToString(string format) => ToString(format, CultureInfo.InvariantCulture.NumberFormat);
 
         public string ToString(string? format, IFormatProvider formatProvider)
         {
@@ -341,15 +325,9 @@ namespace MechJebLib.Primitives
                 $"({x.ToString(format, formatProvider)}, {y.ToString(format, formatProvider)}, {z.ToString(format, formatProvider)}, {w.ToString(format, formatProvider)})";
         }
 
-        public bool Equals(Q3 other)
-        {
-            return x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z) && w.Equals(other.w);
-        }
+        public bool Equals(Q3 other) => x.Equals(other.x) && y.Equals(other.y) && z.Equals(other.z) && w.Equals(other.w);
 
-        public override bool Equals(object? obj)
-        {
-            return obj is Q3 other && Equals(other);
-        }
+        public override bool Equals(object? obj) => obj is Q3 other && Equals(other);
 
         public override int GetHashCode()
         {
