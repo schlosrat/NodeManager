@@ -13,11 +13,16 @@ using KSP.Sim.impl;
 using System.Runtime.CompilerServices;
 using MechJebLib.Primitives;
 using UnityEngine;
+using NodeManager;
 
 namespace MuMech
 {
     public static class OrbitExtensions
     {
+        // public new static ManualLogSource Logger { get; set; }
+
+        private static bool mechJebWay = true;
+
         private static readonly GameInstance Game = GameManager.Instance.Game;
 
         public static double RelativeDistance(this PatchedConicsOrbit a, PatchedConicsOrbit b, double UT)
@@ -43,15 +48,15 @@ namespace MuMech
         public static Vector3d WorldOrbitalVelocityAtUT(this PatchedConicsOrbit o, double UT) // KS2: OrbitalVelocity // was: SwappedOrbitalVelocityAtUT
         {
             // return o.getOrbitalVelocityAtUT(UT).xzy;
-            Vector3d thisVec = o.GetOrbitalVelocityAtUTZup(UT).SwapYAndZ;
+            Vector3d thisVec = o.GetOrbitalVelocityAtUTZup(UT).SwapYAndZ; // MechJebWay
             Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetOrbitalVelocityAtUTZup(UT).SwapYAndZ); // from KS2
             if (thisVec != thisVec2)
             {
-                Debug.Log($"WorldOrbitalVelocityAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
-                Debug.Log($"WorldOrbitalVelocityAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"WorldOrbitalVelocityAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"WorldOrbitalVelocityAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                // return thisVec2;
             }
-            // return thisVec2;
-            return o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetOrbitalVelocityAtUTZup(UT).SwapYAndZ); // from KS2
+            return mechJebWay ? thisVec : thisVec2;
         }
 
         /// <summary>
@@ -65,15 +70,15 @@ namespace MuMech
         public static Vector3d WorldBCIPositionAtUT(this PatchedConicsOrbit o, double UT) // KS2: RelativePosition // was: SwappedRelativePositionAtUT
         {
             // return o.getRelativePositionAtUT(UT).xzy;
-            Vector3d thisVec = o.GetRelativePositionAtUT(UT);
+            Vector3d thisVec = o.GetRelativePositionAtUT(UT); // MechJebWay (sort of - without the SwapYAndZ)
             Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetRelativePositionAtUTZup(UT).SwapYAndZ); // From KS2
             if (thisVec != thisVec2)
             {
-                Debug.Log($"WorldBCIPositionAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
-                Debug.Log($"WorldBCIPositionAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"WorldBCIPositionAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"WorldBCIPositionAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                // return thisVec2;
             }
-            // return thisVec2;
-            return o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetRelativePositionAtUTZup(UT).SwapYAndZ); // From KS2
+            return mechJebWay ? thisVec : thisVec2;
         }
 
         /// <summary>
@@ -87,15 +92,15 @@ namespace MuMech
         public static Vector3d WorldPositionAtUT(this PatchedConicsOrbit o, double UT) // was: SwappedAbsolutePositionAtUT
         {
             // return o.referenceBody.position + o.WorldBCIPositionAtUT(UT);
-            Vector3d thisVec = o.referenceBody.Position.localPosition + o.WorldBCIPositionAtUT(UT);
+            Vector3d thisVec = o.referenceBody.Position.localPosition + o.WorldBCIPositionAtUT(UT); // MechJebWay
             Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.referenceBody.Position.localPosition + o.GetRelativePositionAtUTZup(UT).SwapYAndZ); // from KS2
             if (thisVec != thisVec2)
             {
-                Debug.Log($"WorldPositionAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
-                Debug.Log($"WorldPositionAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"WorldPositionAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"WorldPositionAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                // return thisVec2;
             }
-            // return thisVec2;
-            return o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.referenceBody.Position.localPosition + o.GetRelativePositionAtUTZup(UT).SwapYAndZ); // from KS2
+            return mechJebWay ? thisVec : thisVec2;
         }
 
         /// <summary>
@@ -109,15 +114,15 @@ namespace MuMech
         public static V3 RightHandedOrbitalVelocityAtUT(this PatchedConicsOrbit o, double UT)
         {
             // return o.getOrbitalVelocityAtUT(UT).ToV3();
-            V3 thisVec = o.GetOrbitalVelocityAtUTZup(UT).ToV3();
+            V3 thisVec = o.GetOrbitalVelocityAtUTZup(UT).ToV3(); // MechJebWay
             V3 thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetOrbitalVelocityAtUTZup(UT)).ToV3(); // from KS2
             if (thisVec != thisVec2)
             {
-                Debug.Log($"RightHandedOrbitalVelocityAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
-                Debug.Log($"RightHandedOrbitalVelocityAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"RightHandedOrbitalVelocityAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"RightHandedOrbitalVelocityAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                // return thisVec2;
             }
-            // return thisVec2;
-            return o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetOrbitalVelocityAtUTZup(UT)).ToV3(); // from KS2
+            return mechJebWay ? thisVec : thisVec2;
         }
 
         /// <summary>
@@ -131,15 +136,15 @@ namespace MuMech
         public static V3 RightHandedBCIPositionAtUT(this PatchedConicsOrbit o, double UT)
         {
             // return o.getRelativePositionAtUT(UT).ToV3();
-            V3 thisVec = o.GetRelativePositionAtUTZup(UT).ToV3();
+            V3 thisVec = o.GetRelativePositionAtUTZup(UT).ToV3(); // MechJebWay
             V3 thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetRelativePositionAtUTZup(UT)).ToV3(); // from KS2
             if (thisVec != thisVec2)
             {
-                Debug.Log($"RightHandedBCIPositionAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
-                Debug.Log($"RightHandedBCIPositionAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"RightHandedBCIPositionAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"RightHandedBCIPositionAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                // return thisVec2;
             }
-            // return thisVec2;
-            return o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetRelativePositionAtUTZup(UT)).ToV3(); // from KS2
+            return mechJebWay ? thisVec : thisVec2;
         }
 
         /// <summary>
@@ -192,15 +197,15 @@ namespace MuMech
         public static Vector3d OrbitNormal(this PatchedConicsOrbit o) // KS2: OrbitNormal // was: SwappedOrbitNormal
         {
             // return -o.GetOrbitNormal().xzy.normalized;
-            Vector3d thisVec = -o.GetRelativeOrbitNormal().SwapYAndZ.normalized;
+            Vector3d thisVec = -o.GetRelativeOrbitNormal().SwapYAndZ.normalized; // MechJebWay
             Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, -o.GetRelativeOrbitNormal().SwapYAndZ).normalized; // From KS2
             if (thisVec != thisVec2)
             {
-                Debug.Log($"OrbitNormal(1): thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
-                Debug.Log($"OrbitNormal(1): thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"OrbitNormal(1): thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"OrbitNormal(1): thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                // return thisVec2;
             }
-            // return thisVec2;
-            return o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, -o.GetRelativeOrbitNormal().SwapYAndZ).normalized; // From KS2
+            return mechJebWay ? thisVec : thisVec2;
         }
 
         //normalized vector perpendicular to the orbital plane
@@ -209,15 +214,15 @@ namespace MuMech
         public static Vector3d OrbitNormal(this IKeplerOrbit o) // KS2: OrbitNormal // was: SwappedOrbitNormal
         {
             // return -o.GetOrbitNormal().xzy.normalized
-            Vector3d thisVec = -o.GetRelativeOrbitNormal().SwapYAndZ.normalized;
+            Vector3d thisVec = -o.GetRelativeOrbitNormal().SwapYAndZ.normalized; // MechJebWay
             Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, -o.GetRelativeOrbitNormal().SwapYAndZ).normalized; // From KS2
             if (thisVec != thisVec2)
             {
-                Debug.Log($"OrbitNormal(2): thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
-                Debug.Log($"OrbitNormal(2): thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"OrbitNormal(2): thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"OrbitNormal(2): thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                // return thisVec2;
             }
-            // return thisVec2;
-            return o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, -o.GetRelativeOrbitNormal().SwapYAndZ).normalized; // From KS2
+            return mechJebWay ? thisVec : thisVec2;
         }
 
         //normalized vector along the orbital velocity
@@ -246,15 +251,15 @@ namespace MuMech
         public static Vector3d NormalPlus(this PatchedConicsOrbit o, double UT)
         {
             // return o.OrbitNormal();
-            Vector3d thisVec = o.GetRelativeOrbitNormal().SwapYAndZ.normalized;
+            Vector3d thisVec = o.GetRelativeOrbitNormal().SwapYAndZ.normalized; // MechJebWay
             Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetRelativeOrbitNormal().SwapYAndZ.normalized); // From KS2
             if (thisVec != thisVec2)
             {
-                Debug.Log($"NormalPlus: thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
-                Debug.Log($"NormalPlus: thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"NormalPlus: thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
+                NodeManagerPlugin.Logger.LogWarning($"NormalPlus: thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
+                // return thisVec2;
             }
-            // return thisVec2;
-            return o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetRelativeOrbitNormal().SwapYAndZ.normalized); // From KS2
+            return mechJebWay ? thisVec : thisVec2;
         }
 
         //normalized vector parallel to the planet's surface, and pointing in the same general direction as the orbital velocity
@@ -305,8 +310,9 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PatchedConicsOrbit PerturbedOrbit(this PatchedConicsOrbit o, double UT, Vector3d dV)
         {
-            // return MuUtils.OrbitFromStateVectors(o.WorldPositionAtUT(UT), o.WorldOrbitalVelocityAtUT(UT) + dV, o.referenceBody, UT);
-            return o.CreateOrbit(o.WorldBCIPositionAtUT(UT), o.WorldOrbitalVelocityAtUT(UT) + dV, UT); // From KS2
+            return MuUtils.OrbitFromStateVectors(o.WorldPositionAtUT(UT), o.WorldOrbitalVelocityAtUT(UT) + dV, o.referenceBody, UT);
+            // return MuUtils.OrbitFromStateVectors(o.WorldPositionAtUT(UT), o.WorldOrbitalVelocityAtUT(UT) + dV, o.coordinateSystem, o.referenceBody, UT);
+            // return o.CreateOrbit(o.WorldBCIPositionAtUT(UT), o.WorldOrbitalVelocityAtUT(UT) + dV, UT); // From KS2
             // Actual KS2 returns: ReferenceBody.CreateOrbit(RelativePosition(ut), OrbitalVelocity(ut) + dV, ut);
         }
 
@@ -317,6 +323,7 @@ namespace MuMech
 
             // Actual KS2 returns: orbit.UpdateFromStateVectors(new Position(body.SimulationObject.transform.celestialFrame, position), new Velocity(body.SimulationObject.transform.celestialFrame.motionFrame, velocity), body, ut);
             orbit.UpdateFromStateVectors(new Position(o.referenceBody.SimulationObject.transform.celestialFrame, position), new Velocity(o.referenceBody.SimulationObject.transform.celestialFrame.motionFrame, velocity), o.referenceBody, UT);
+            orbit.UpdateFromStateVectors(new Position(o.coordinateSystem, position), new Velocity(o.referenceBody.SimulationObject.transform.celestialFrame.motionFrame, velocity), o.referenceBody, UT);
 
             return orbit;
         }
@@ -608,11 +615,11 @@ namespace MuMech
             Vector3d ret = -o.Apoapsis * vectorToPe;
             if (double.IsNaN(ret.x))
             {
-                Debug.LogError("OrbitExtensions.WorldBCIPositionAtApoapsis got a NaN result!");
-                Debug.LogError("o.LAN = " + o.longitudeOfAscendingNode);
-                Debug.LogError("o.inclination = " + o.inclination);
-                Debug.LogError("o.argumentOfPeriapsis = " + o.argumentOfPeriapsis);
-                Debug.LogError("o.OrbitNormal() = " + o.OrbitNormal());
+                NodeManagerPlugin.Logger.LogError("OrbitExtensions.WorldBCIPositionAtApoapsis got a NaN result!");
+                NodeManagerPlugin.Logger.LogError("o.LAN = " + o.longitudeOfAscendingNode);
+                NodeManagerPlugin.Logger.LogError("o.inclination = " + o.inclination);
+                NodeManagerPlugin.Logger.LogError("o.argumentOfPeriapsis = " + o.argumentOfPeriapsis);
+                NodeManagerPlugin.Logger.LogError("o.OrbitNormal() = " + o.OrbitNormal());
             }
             return ret;
         }
