@@ -126,13 +126,14 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             OnManeuverCreatedMessage(message);
         });
 
+        // GameManager.Instance.Game.Messages.Subscribe<GameStateLeftMessage>(msg =>
         //Game.Messages.Subscribe<GameStateLeftMessage>(msg =>
         //{
         //    MessageCenterMessage message = (GameStateLeftMessage)msg;
         //    OnGameStateLeftMessage(message);
         //});
 
-        // GameManager.Instance.Game.Messages.Subscribe<ManeuverCreatedMessage>(msg =>
+        // GameManager.Instance.Game.Messages.Subscribe<GameStateEnteredMessage>(msg =>
         Game.Messages.Subscribe<GameStateEnteredMessage>(msg =>
         {
             MessageCenterMessage message = (GameStateEnteredMessage)msg;
