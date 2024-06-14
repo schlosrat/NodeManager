@@ -126,13 +126,14 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
             OnManeuverCreatedMessage(message);
         });
 
+        // GameManager.Instance.Game.Messages.Subscribe<GameStateLeftMessage>(msg =>
         //Game.Messages.Subscribe<GameStateLeftMessage>(msg =>
         //{
         //    MessageCenterMessage message = (GameStateLeftMessage)msg;
         //    OnGameStateLeftMessage(message);
         //});
 
-        // GameManager.Instance.Game.Messages.Subscribe<ManeuverCreatedMessage>(msg =>
+        // GameManager.Instance.Game.Messages.Subscribe<GameStateEnteredMessage>(msg =>
         Game.Messages.Subscribe<GameStateEnteredMessage>(msg =>
         {
             MessageCenterMessage message = (GameStateEnteredMessage)msg;
@@ -333,7 +334,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
                 }
                 else
                     Logger.LogError($"ManeuverTrajectoryPatch:  null");
-                Logger.LogError($"showOutOfFuelMessage:     {node.showOutOfFuelMessage}");
                 Logger.LogError($"NodeName:                 {node.NodeName}");
                 Logger.LogError($"RelatedSimID:             {node.RelatedSimID}");
                 Logger.LogError($"SimTransform:             {node.SimTransform}");
@@ -358,7 +358,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
                 }
                 else
                     Logger.LogInfo($"ManeuverTrajectoryPatch:  null");
-                Logger.LogInfo($"showOutOfFuelMessage:     {node.showOutOfFuelMessage}");
                 Logger.LogInfo($"SimTransform:             {node.SimTransform}");
             }
         }
@@ -388,7 +387,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
                 }
                 else
                     Logger.LogError($"ManeuverTrajectoryPatch:  null");
-                Logger.LogError($"showOutOfFuelMessage:     {node.showOutOfFuelMessage}");
                 Logger.LogError($"NodeName:                 {node.NodeName}");
                 Logger.LogError($"RelatedSimID:             {node.RelatedSimID}");
                 Logger.LogError($"SimTransform:             {node.SimTransform}");
@@ -413,7 +411,6 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
                 }
                 else
                     Logger.LogInfo($"ManeuverTrajectoryPatch:  null");
-                Logger.LogInfo($"showOutOfFuelMessage:     {node.showOutOfFuelMessage}");
                 Logger.LogInfo($"SimTransform:             {node.SimTransform}");
             }
 
@@ -607,8 +604,7 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
 
         if (!fixNodeList)
             maneuverNodeData.BurnVector = burnVector;
-        if (!Game.SpaceSimulation.Maneuvers.AddNodeToVessel(maneuverNodeData))
-            return false;
+        Game.SpaceSimulation.Maneuvers.AddNodeToVessel(maneuverNodeData);
 
         Game.Map.TryGetMapCore(out MapCore mapCore);
         if (mapCore != null)
@@ -1024,8 +1020,9 @@ public class NodeManagerPlugin : BaseSpaceWarpPlugin
         burnVector.x = 0;
         burnVector.y = 0;
         burnVector.z = 0;
-
-        return CreateManeuverNodeAtUT(burnVector, burnUT, 0);
+        bool wtf = CreateManeuverNodeAtUT(burnVector, burnUT, 0);
+        return wtf;
+        // return CreateManeuverNodeAtUT(burnVector, burnUT, 0);
     }
 
     public IEnumerator RefreshNodes()
