@@ -14,13 +14,12 @@ using System.Runtime.CompilerServices;
 using MechJebLib.Primitives;
 using UnityEngine;
 using NodeManager;
+using static VehiclePhysics.TelemetryTemplateBase;
 
 namespace MuMech
 {
     public static class OrbitExtensions
     {
-        // public new static ManualLogSource Logger { get; set; }
-
         private static bool mechJebWay = true;
 
         private static readonly GameInstance Game = GameManager.Instance.Game;
@@ -49,12 +48,12 @@ namespace MuMech
         {
             // return o.getOrbitalVelocityAtUT(UT).xzy;
             Vector3d thisVec = o.GetOrbitalVelocityAtUTZup(UT).SwapYAndZ; // MechJebWay
-            Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetOrbitalVelocityAtUTZup(UT).SwapYAndZ); // from KS2
+            // Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetOrbitalVelocityAtUTZup(UT).SwapYAndZ); // from KS2
+            Vector3d thisVec2 = o.GetOrbitalVelocityAtUTZup(UT).SwapYAndZ; // from KS2 2024.02.21
             if (thisVec != thisVec2)
             {
                 NodeManagerPlugin.Logger.LogWarning($"WorldOrbitalVelocityAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
                 NodeManagerPlugin.Logger.LogWarning($"WorldOrbitalVelocityAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
-                // return thisVec2;
             }
             return mechJebWay ? thisVec : thisVec2;
         }
@@ -71,14 +70,18 @@ namespace MuMech
         {
             // return o.getRelativePositionAtUT(UT).xzy;
             Vector3d thisVec = o.GetRelativePositionAtUT(UT); // MechJebWay (sort of - without the SwapYAndZ)
-            Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetRelativePositionAtUTZup(UT).SwapYAndZ); // From KS2
+            // Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetRelativePositionAtUTZup(UT).SwapYAndZ); // From KS2
+            // Theory: KSP1's getRelativePositionAtUT funtion returns right-handed, and so needs .xzy.
+            // Similarly KSP2's GetRelativePositionAtUTZup function also returns right-handed, and so needs .SwapYAndZ
+            // Presumably KSP2's GetRelativePositionAtUT function returns left-handed, and so does not need this - but are there any other differences? Why have both?
+            Vector3d thisVec2 = o.GetRelativePositionAtUTZup(UT).SwapYAndZ; // From KS2 2024.02.21
             if (thisVec != thisVec2)
             {
                 NodeManagerPlugin.Logger.LogWarning($"WorldBCIPositionAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
                 NodeManagerPlugin.Logger.LogWarning($"WorldBCIPositionAtUT: at {UT} thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
-                // return thisVec2;
             }
-            return mechJebWay ? thisVec : thisVec2;
+            // return mechJebWay ? thisVec : thisVec2;
+            return thisVec2;
         }
 
         /// <summary>
@@ -94,6 +97,7 @@ namespace MuMech
             // return o.referenceBody.position + o.WorldBCIPositionAtUT(UT);
             Vector3d thisVec = o.referenceBody.Position.localPosition + o.WorldBCIPositionAtUT(UT); // MechJebWay
             Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.referenceBody.Position.localPosition + o.GetRelativePositionAtUTZup(UT).SwapYAndZ); // from KS2
+            // Vector3d thisVec2 = o.referenceBody.Orbit.GlobalPosition(ut) + GlobalRelativePosition(ut); // KS2: 2024.02.21 - recursive function? This is in a method called `GlobalPosition`
             if (thisVec != thisVec2)
             {
                 NodeManagerPlugin.Logger.LogWarning($"WorldPositionAtUT: at {UT} thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
@@ -198,12 +202,12 @@ namespace MuMech
         {
             // return -o.GetOrbitNormal().xzy.normalized;
             Vector3d thisVec = -o.GetRelativeOrbitNormal().SwapYAndZ.normalized; // MechJebWay
-            Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, -o.GetRelativeOrbitNormal().SwapYAndZ).normalized; // From KS2
-            if (thisVec != thisVec2)
+            // Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, -o.GetRelativeOrbitNormal().SwapYAndZ).normalized; // From KS2
+            Vector3d thisVec2 = -o.GetRelativeOrbitNormal().SwapYAndZ; // From KS2 2024.0220
+            if ((thisVec - thisVec2).magnitude > 0.000001)
             {
                 NodeManagerPlugin.Logger.LogWarning($"OrbitNormal(1): thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
                 NodeManagerPlugin.Logger.LogWarning($"OrbitNormal(1): thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
-                // return thisVec2;
             }
             return mechJebWay ? thisVec : thisVec2;
         }
@@ -215,12 +219,12 @@ namespace MuMech
         {
             // return -o.GetOrbitNormal().xzy.normalized
             Vector3d thisVec = -o.GetRelativeOrbitNormal().SwapYAndZ.normalized; // MechJebWay
-            Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, -o.GetRelativeOrbitNormal().SwapYAndZ).normalized; // From KS2
+            // Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, -o.GetRelativeOrbitNormal().SwapYAndZ).normalized; // From KS2
+            Vector3d thisVec2 = -o.GetRelativeOrbitNormal().SwapYAndZ; // From KS2 2024.0220
             if (thisVec != thisVec2)
             {
                 NodeManagerPlugin.Logger.LogWarning($"OrbitNormal(2): thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
                 NodeManagerPlugin.Logger.LogWarning($"OrbitNormal(2): thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
-                // return thisVec2;
             }
             return mechJebWay ? thisVec : thisVec2;
         }
@@ -229,13 +233,22 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d Prograde(this PatchedConicsOrbit o, double UT) // Agrees with KS2
         {
+            // KS2: OrbitalVelocity(ut).normalized; // From KS2 2024.02.21
             return o.WorldOrbitalVelocityAtUT(UT).normalized;
         }
+
+        //public VelocityAtPosition GlobalVelocity(double ut) // KS2: 2024.02.21
+        //{
+        //    return new VelocityAtPosition(
+        //        new Velocity(context.Game.UniverseModel.GalacticOrigin.celestialFrame.motionFrame,
+        //            orbit.GetFrameVelAtUTZup(ut).SwapYAndZ), GlobalPosition(ut));
+        //}
 
         //normalized vector pointing radially outward from the planet
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d Up(this PatchedConicsOrbit o, double UT) // Agrees with KS2
         {
+            //KS2: RelativePosition(ut).normalized; // From KS2 2024.02.21
             return o.WorldBCIPositionAtUT(UT).normalized;
         }
 
@@ -243,6 +256,7 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d RadialPlus(this PatchedConicsOrbit o, double UT) // Agrees with KS2
         {
+            // KS2: Vector3d.Exclude(Prograde(ut), Up(ut)).normalized; // From KS2 2024.02.21
             return Vector3d.Exclude(o.Prograde(UT), o.Up(UT)).normalized;
         }
 
@@ -252,12 +266,12 @@ namespace MuMech
         {
             // return o.OrbitNormal();
             Vector3d thisVec = o.GetRelativeOrbitNormal().SwapYAndZ.normalized; // MechJebWay
-            Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetRelativeOrbitNormal().SwapYAndZ.normalized); // From KS2
+            // Vector3d thisVec2 = o.referenceBody.transform.celestialFrame.ToLocalPosition(o.ReferenceFrame, o.GetRelativeOrbitNormal().SwapYAndZ.normalized); // From KS2
+            Vector3d thisVec2 = o.GetRelativeOrbitNormal().SwapYAndZ.normalized; // From KS2 2024.02.21
             if (thisVec != thisVec2)
             {
                 NodeManagerPlugin.Logger.LogWarning($"NormalPlus: thisVec  = [{thisVec.x}, {thisVec.y}, {thisVec.z}]");
                 NodeManagerPlugin.Logger.LogWarning($"NormalPlus: thisVec2 = [{thisVec2.x}, {thisVec2.y}, {thisVec2.z}]");
-                // return thisVec2;
             }
             return mechJebWay ? thisVec : thisVec2;
         }
@@ -267,7 +281,7 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3d Horizontal(this PatchedConicsOrbit o, double UT) // Agrees with KS2
         {
-            return Vector3d.Exclude(o.Up(UT), o.Prograde(UT)).normalized;
+            return Vector3d.Exclude(o.Up(UT), o.Prograde(UT)).normalized; // KS2: 2024.02.21
         }
 
         //horizontal component of the velocity vector
@@ -303,6 +317,7 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Radius(this PatchedConicsOrbit o, double UT) // Agrees with KS2
         {
+            // return RelativePosition(ut).magnitude; // KS2: 2024.02.21
             return o.WorldBCIPositionAtUT(UT).magnitude;
         }
 
@@ -313,6 +328,7 @@ namespace MuMech
             return MuUtils.OrbitFromStateVectors(o.WorldPositionAtUT(UT), o.WorldOrbitalVelocityAtUT(UT) + dV, o.referenceBody, UT);
             // return MuUtils.OrbitFromStateVectors(o.WorldPositionAtUT(UT), o.WorldOrbitalVelocityAtUT(UT) + dV, o.coordinateSystem, o.referenceBody, UT);
             // return o.CreateOrbit(o.WorldBCIPositionAtUT(UT), o.WorldOrbitalVelocityAtUT(UT) + dV, UT); // From KS2
+            // return ReferenceBody.CreateOrbit(RelativePosition(ut), OrbitalVelocity(ut) + dV, ut); // From KS2 2024.02.21
             // Actual KS2 returns: ReferenceBody.CreateOrbit(RelativePosition(ut), OrbitalVelocity(ut) + dV, ut);
         }
 
@@ -323,7 +339,7 @@ namespace MuMech
 
             // Actual KS2 returns: orbit.UpdateFromStateVectors(new Position(body.SimulationObject.transform.celestialFrame, position), new Velocity(body.SimulationObject.transform.celestialFrame.motionFrame, velocity), body, ut);
             orbit.UpdateFromStateVectors(new Position(o.referenceBody.SimulationObject.transform.celestialFrame, position), new Velocity(o.referenceBody.SimulationObject.transform.celestialFrame.motionFrame, velocity), o.referenceBody, UT);
-            orbit.UpdateFromStateVectors(new Position(o.coordinateSystem, position), new Velocity(o.referenceBody.SimulationObject.transform.celestialFrame.motionFrame, velocity), o.referenceBody, UT);
+            // orbit.UpdateFromStateVectors(new Position(o.coordinateSystem, position), new Velocity(o.referenceBody.SimulationObject.transform.celestialFrame.motionFrame, velocity), o.referenceBody, UT);
 
             return orbit;
         }
@@ -464,7 +480,7 @@ namespace MuMech
         {
             // We use ObtAtEpoch and not meanAnomalyAtEpoch because somehow meanAnomalyAtEpoch
             // can be wrong when using the RealSolarSystem mod. ObtAtEpoch is always correct.
-            double ret = (o.ObTAtEpoch + (UT - o.epoch)) * o.MeanMotion();
+            double ret = (o.ObTAtEpoch + (UT - o.epoch)) * o.MeanMotion(); // Matches KS2: 2024.02.21
             if (o.eccentricity < 1) ret = MuUtils.ClampRadiansTwoPi(ret);
             return ret;
         }
@@ -476,7 +492,7 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double UTAtMeanAnomaly(this PatchedConicsOrbit o, double meanAnomaly, double UT)
         {
-            double currentMeanAnomaly = o.MeanAnomalyAtUT(UT);
+            double currentMeanAnomaly = o.MeanAnomalyAtUT(UT); // Matches KS2: 2024.02.21
             double meanDifference = meanAnomaly - currentMeanAnomaly;
             if (o.eccentricity < 1) meanDifference = MuUtils.ClampRadiansTwoPi(meanDifference);
             return UT + meanDifference / o.MeanMotion();
@@ -489,7 +505,12 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double NextPeriapsisTime(this PatchedConicsOrbit o, double UT)
         {
-            if (o.eccentricity < 1)
+            // KS2 2024.02.21
+            // var ut = maybeUt.GetValueOrDefault(context.UniversalTime);
+            // if (orbit.eccentricity < 1)
+            //     return TimeOfTrueAnomaly(0, Option.Some(ut));
+            // return ut - MeanAnomalyAtUt(ut) / MeanMotion;
+            if (o.eccentricity < 1) // Matches KS2: 2024.02.21
             {
                 return o.TimeOfTrueAnomaly(0, UT);
             }
@@ -503,7 +524,11 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double NextApoapsisTime(this PatchedConicsOrbit o, double UT)
         {
-            if (o.eccentricity < 1)
+            // KS2 2024.02.21
+            // var ut = maybeUt.GetValueOrDefault(context.UniversalTime);
+            // if (orbit.eccentricity < 1) return Option.Some(TimeOfTrueAnomaly(Math.PI, Option.Some(ut)));
+            // return Option.None<double>();
+            if (o.eccentricity < 1) // Matches KS2: 2024.02.21
             {
                 return o.TimeOfTrueAnomaly(Math.PI, UT);
             }
@@ -517,7 +542,7 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double AscendingNodeTrueAnomaly(this PatchedConicsOrbit a, IKeplerOrbit b)  // was orbit as type for b
         {
-            Vector3d vectorToAN = Vector3d.Cross(a.OrbitNormal(), b.OrbitNormal());
+            Vector3d vectorToAN = Vector3d.Cross(a.OrbitNormal(), b.OrbitNormal()); // Matches KS2: 2024.02.21
             return a.TrueAnomalyFromVector(vectorToAN);
         }
 
@@ -527,7 +552,8 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double DescendingNodeTrueAnomaly(this PatchedConicsOrbit a, IKeplerOrbit b) // was orbit as type for b
         {
-            return MuUtils.ClampRadiansTwoPi(a.AscendingNodeTrueAnomaly(b) + Math.PI);
+            // return DirectBindingMath.ClampRadians2Pi(AscendingNodeTrueAnomaly(b) + Math.PI); // KS2 2024.02.21
+            return MuUtils.ClampRadiansTwoPi(a.AscendingNodeTrueAnomaly(b) + Math.PI); // Matches KS2: 2024.02.21
         }
 
         //Gives the true anomaly at which o crosses the equator going northwards, if o is east-moving,
@@ -536,6 +562,7 @@ namespace MuMech
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double AscendingNodeEquatorialTrueAnomaly(this PatchedConicsOrbit o)
         {
+            // return ReferenceFrame.ToLocalPosition(orbit.ReferenceFrame, orbit.GetRelativeANVector().SwapYAndZ);
             Vector3d vectorToAN = Vector3d.Cross(o.referenceBody.transform.up.vector, o.OrbitNormal());
             return o.TrueAnomalyFromVector(vectorToAN);
         }
